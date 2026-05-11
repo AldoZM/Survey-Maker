@@ -61,7 +61,7 @@ export class SurveyLoaderService {
    * | Signal | Type | Description |
    * |---|---|---|
    * | `survey.isLoading()` | `boolean` | `true` while the HTTP request is in flight |
-   * | `survey.error()` | `unknown` | Error thrown by the last failed load, or `undefined` |
+   * | `survey.error()` | `unknown` | HTTP or schema-validation error from the last load, or `undefined` |
    * | `survey.value()` | `SurveySchema \| undefined` | The validated schema, or `undefined` when idle/loading |
    * | `survey.status()` | `ResourceStatus` | Detailed status: `Idle`, `Loading`, `Resolved`, `Error` |
    */
@@ -71,6 +71,8 @@ export class SurveyLoaderService {
       if (!id) {
         return of(undefined);
       }
+      // parseSchema() throws synchronously on invalid JSON structure;
+      // rxResource catches the error and surfaces it via survey.error()
       return this.http
         .get<unknown>(`/schemas/${id}.json`)
         .pipe(map((raw) => parseSchema(raw)));

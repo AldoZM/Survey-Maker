@@ -7,7 +7,15 @@
  * callers can surface meaningful error messages without inspecting internals.
  */
 
-import { SurveySchema, SurveySection, QuestionField, FieldType } from '../interfaces';
+import {
+  SurveySchema,
+  SurveySection,
+  QuestionField,
+  FieldType,
+  ValidationRule,
+  FieldOption,
+  ConditionalLogic,
+} from '../interfaces';
 
 /** All field types accepted by the survey engine. */
 const VALID_FIELD_TYPES: FieldType[] = [
@@ -138,23 +146,100 @@ function parseField(raw: unknown, sectionId: string, index: number): QuestionFie
     throw new Error(`Field "${obj['id']}" missing required "label"`);
   }
 
+  const fieldId = obj['id'] as string;
+
   return {
-    id: obj['id'] as string,
+    id: fieldId,
     type: obj['type'] as FieldType,
     label: obj['label'] as string,
     placeholder: typeof obj['placeholder'] === 'string' ? obj['placeholder'] : undefined,
     hint: typeof obj['hint'] === 'string' ? obj['hint'] : undefined,
     validation:
       obj['validation'] && typeof obj['validation'] === 'object'
-        ? (obj['validation'] as QuestionField['validation'])
+        ? parseValidation(obj['validation'], fieldId)
         : undefined,
     options: Array.isArray(obj['options'])
-      ? (obj['options'] as QuestionField['options'])
+      ? parseOptions(obj['options'], fieldId)
       : undefined,
     condition:
       obj['condition'] && typeof obj['condition'] === 'object'
-        ? (obj['condition'] as QuestionField['condition'])
+        ? parseCondition(obj['condition'], fieldId)
         : undefined,
     defaultValue: obj['defaultValue'] as QuestionField['defaultValue'],
+  };
+}
+
+/**
+ * Validates and type-casts a ValidationRule object.
+ *
+ * @param raw     - Raw validation object from JSON.
+ * @param fieldId - Parent field ID for error messages.
+ */
+function parseValidation(raw: unknown, fieldId: string): ValidationRule {
+  const obj = raw as Record<string, unknown>;
+  if (obj['required'] !== undefined && typeof obj['required'] !== 'boolean') {
+    throw new Error(`Field "${fieldId}" validation.required must be a boolean`);
+  }
+  if (obj['min'] !== undefined && typeof obj['min'] !== 'number') {
+    throw new Error(`Field "${fieldId}" validation.min must be a number`);
+  }
+  if (obj['max'] !== undefined && typeof obj['max'] !== 'number') {
+    throw new Error(`Field "${fieldId}" validation.max must be a number`);
+  }
+  if (obj['pattern'] !== undefined && typeof obj['pattern'] !== 'string') {
+    throw new Error(`Field "${fieldId}" validation.pattern must be a string (RegExp)`);
+  }
+  return {
+    required: obj['required'] as boolean | undefined,
+    min: obj['min'] as number | undefined,
+    max: obj['max'] as number | undefined,
+    pattern: obj['pattern'] as string | undefined,
+    message: typeof obj['message'] === 'string' ? obj['message'] : undefined,
+  };
+}
+
+/**
+ * Validates and type-casts an array of FieldOption objects.
+ *
+ * @param raw     - Raw options array from JSON.
+ * @param fieldId - Parent field ID for error messages.
+ */
+function parseOptions(raw: unknown[], fieldId: string): FieldOption[] {
+  return raw.map((el, i) => {
+    if (!el || typeof el !== 'object') {
+      throw new Error(`Field "${fieldId}" option at index ${i} must be an object`);
+    }
+    const opt = el as Record<string, unknown>;
+    if (typeof opt['value'] !== 'string' || !opt['value']) {
+      throw new Error(`Field "${fieldId}" option at index ${i} missing required string "value"`);
+    }
+    if (typeof opt['label'] !== 'string' || !opt['label']) {
+      throw new Error(`Field "${fieldId}" option at index ${i} missing required string "label"`);
+    }
+    return {
+      value: opt['value'] as string,
+      label: opt['label'] as string,
+      disabled: typeof opt['disabled'] === 'boolean' ? opt['disabled'] : undefined,
+    };
+  });
+}
+
+/**
+ * Validates and type-casts a ConditionalLogic object.
+ *
+ * @param raw     - Raw condition object from JSON.
+ * @param fieldId - Parent field ID for error messages.
+ */
+function parseCondition(raw: unknown, fieldId: string): ConditionalLogic {
+  const obj = raw as Record<string, unknown>;
+  if (typeof obj['dependsOn'] !== 'string' || !obj['dependsOn']) {
+    throw new Error(`Field "${fieldId}" condition.dependsOn must be a non-empty string`);
+  }
+  if (obj['equals'] === undefined) {
+    throw new Error(`Field "${fieldId}" condition.equals is required`);
+  }
+  return {
+    dependsOn: obj['dependsOn'] as string,
+    equals: obj['equals'] as ConditionalLogic['equals'],
   };
 }
