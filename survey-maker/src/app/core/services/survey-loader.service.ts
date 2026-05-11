@@ -74,7 +74,7 @@ export class SurveyLoaderService {
       // parseSchema() throws synchronously on invalid JSON structure;
       // rxResource catches the error and surfaces it via survey.error()
       return this.http
-        .get<unknown>(`/schemas/${id}.json`)
+        .get<unknown>(`schemas/${id}.json`)
         .pipe(map((raw) => parseSchema(raw)));
     },
   });
