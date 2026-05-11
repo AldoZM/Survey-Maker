@@ -27,6 +27,8 @@
 16. [Angular Material](#16-angular-material)
 17. [Routing y lazy loading](#17-routing-y-lazy-loading)
 18. [Despliegue en GitHub Pages](#18-despliegue-en-github-pages)
+19. [Pantalla de éxito post-envío](#19-pantalla-de-éxito-post-envío)
+20. [Ejecución local para desarrollo y pruebas](#20-ejecución-local-para-desarrollo-y-pruebas)
 
 ---
 
@@ -994,5 +996,157 @@ Esto genera `<base href="C:/Program Files/Git/Survey-Maker/">` en el `index.html
 
 ---
 
-*Documentación generada en sesión 2026-05-11*  
+## 19. Pantalla de éxito post-envío
+
+### Flujo completo de submit
+
+```
+Usuario llena campos → clic "Enviar"
+  → onSubmit() llama touchAll()      (muestra errores en campos no tocados)
+  → si isValid() es true:
+      → submitSurvey()               (limpia localStorage + isSubmitted = true)
+      → template muestra tarjeta de éxito
+  → si isValid() es false:
+      → errores visibles, formulario permanece
+```
+
+### Template condicional en `survey.component.ts`
+
+```typescript
+// Pantalla de éxito — se activa cuando isSubmitted() cambia a true
+@if (state.isSubmitted()) {
+  <mat-card class="success-card">
+    <mat-card-content class="success-content">
+      <mat-icon class="success-icon">check_circle</mat-icon>
+      <h2>¡Gracias por tu cooperación!</h2>
+      <p>Tus respuestas han sido registradas.</p>
+      <button mat-raised-button color="primary" (click)="resetSurvey()">
+        Regresar a la encuesta
+      </button>
+    </mat-card-content>
+  </mat-card>
+}
+
+// Formulario — visible mientras isSubmitted() es false
+@if (!state.isSubmitted()) {
+  <mat-card>...</mat-card>
+}
+```
+
+### `submitSurvey()` en SurveyStateService
+
+```typescript
+submitSurvey(): void {
+  const s = this.schema();
+  if (!s) return;
+  // Elimina entrada de localStorage ANTES de marcar como enviado.
+  // Así initSurvey() no restaura datos viejos cuando el usuario regresa.
+  localStorage.removeItem(`survey-state-${s.id}`);
+  this.isSubmitted.set(true);
+}
+```
+
+### `resetSurvey()` en SurveyComponent
+
+```typescript
+resetSurvey(): void {
+  // initSurvey() busca en localStorage → no encuentra nada (ya fue borrado)
+  // → inicializa campos vacíos con valores por defecto
+  this.state.initSurvey(this.schema());
+}
+```
+
+### Por qué se limpia localStorage antes de `isSubmitted.set(true)`
+
+El `effect()` del servicio guarda en localStorage cada vez que `answers` cambia.
+Al reiniciar el formulario, `initSurvey()` carga lo guardado. Si no borramos primero,
+el usuario que hace "Regresar" vería sus respuestas anteriores en lugar de un
+formulario vacío. Borrar en `submitSurvey()` rompe ese ciclo.
+
+### Dónde viven los datos enviados
+
+Las respuestas **NO se envían a ningún servidor**. Se imprimen en consola:
+```typescript
+console.log('Survey submitted:', this.state.answers());
+```
+Para ver los datos: F12 → pestaña **Console** → busca el log al momento de enviar.
+Para persistencia real se necesitaría integrar Firebase, Supabase, o un backend propio.
+
+---
+
+## 20. Ejecución local para desarrollo y pruebas
+
+### Ubicación del proyecto
+
+```
+D:\Codigo Abierto\GenEncuesta\repo\survey-maker\
+```
+
+Debes estar en esa carpeta para ejecutar cualquier comando de Angular.
+
+### Pasos para levantar el servidor local
+
+**Opción A — PowerShell:**
+```powershell
+Set-Location "D:\Codigo Abierto\GenEncuesta\repo\survey-maker"
+npm start
+```
+
+**Opción B — desde el explorador de archivos:**
+1. Navega a `D:\Codigo Abierto\GenEncuesta\repo\survey-maker`
+2. Haz clic derecho → "Abrir en Terminal"
+3. Ejecuta: `npm start`
+
+### Qué pasa al ejecutar `npm start`
+
+`npm start` internamente corre `ng serve`, que:
+1. Compila el proyecto en memoria (no genera archivos en `dist/`)
+2. Levanta un servidor en `http://localhost:4200`
+3. Activa **hot reload** — cada vez que guardas un archivo, el navegador
+   se actualiza automáticamente sin reiniciar el servidor
+
+### Diferencias entre local y GitHub Pages
+
+| Aspecto | Local (`npm start`) | GitHub Pages |
+|---------|--------------------|--------------| 
+| URL | `http://localhost:4200` | `https://aldozm.github.io/Survey-Maker/` |
+| Base href | `/` (raíz) | `/Survey-Maker/` |
+| Schemas | `public/schemas/*.json` | `public/schemas/*.json` (copiados al build) |
+| Velocidad de cambios | Inmediata (hot reload) | ~2-5 min (build + deploy) |
+| Requiere internet | No | Sí |
+
+### Flujo de trabajo recomendado
+
+```
+1. Hacer cambios en el código
+2. npm start → probar en localhost:4200
+3. Si todo funciona:
+   Set-Location "D:\Codigo Abierto\GenEncuesta\repo\survey-maker"
+   npx ng build --base-href "/Survey-Maker/"
+   npx angular-cli-ghpages --dir=dist/survey-maker/browser
+4. git add + git commit + git push
+```
+
+### Comandos útiles
+
+```powershell
+# Servidor de desarrollo (hot reload)
+npm start
+
+# Correr tests unitarios (Vitest)
+npm test
+
+# Build de producción para GitHub Pages (PowerShell, NO Git Bash)
+npx ng build --base-href "/Survey-Maker/"
+
+# Deploy a GitHub Pages
+npx angular-cli-ghpages --dir=dist/survey-maker/browser
+
+# Ver todos los scripts disponibles
+npm run
+```
+
+---
+
+*Documentación actualizada en sesión 2026-05-11*  
 *Proyecto: https://github.com/AldoZM/Survey-Maker*
