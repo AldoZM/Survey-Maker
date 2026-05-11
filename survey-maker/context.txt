@@ -9,16 +9,25 @@ ESTADO ACTUAL
 -------------
 - App Angular 21 completamente funcional y desplegada en GitHub Pages
 - Branch principal: main
-- Último commit: c056f1a (docs: add error diary)
+- Último commit: 31ff0e4 (docs: add comprehensive code documentation)
 - GitHub Pages: rama gh-pages (manejada por angular-cli-ghpages, NO editar manual)
 - La encuesta de ejemplo carga y funciona correctamente
+- Footer "Made by Aldo Zetina" visible al final de la página
 
 RUTAS IMPORTANTES
 -----------------
-Proyecto Angular:   D:\Codigo Abierto\GenEncuesta\repo\survey-maker\
-Schemas JSON:       D:\Codigo Abierto\GenEncuesta\repo\survey-maker\public\schemas\
-Documentación:      D:\Codigo Abierto\GenEncuesta\repo\survey-maker\docs\
-Diario de errores:  D:\Codigo Abierto\GenEncuesta\repo\survey-maker\error.txt
+Proyecto Angular:      D:\Codigo Abierto\GenEncuesta\repo\survey-maker\
+Schemas JSON:          D:\Codigo Abierto\GenEncuesta\repo\survey-maker\public\schemas\
+Documentación técnica: D:\Codigo Abierto\GenEncuesta\repo\survey-maker\docs\
+Diario de errores:     D:\Codigo Abierto\GenEncuesta\repo\survey-maker\error.txt
+Doc completa código:   D:\Codigo Abierto\GenEncuesta\repo\survey-maker\doc.md
+Contexto de sesión:    D:\Codigo Abierto\GenEncuesta\repo\survey-maker\context.txt
+
+ARCHIVOS RAÍZ DEL PROYECTO (nuevos esta sesión)
+------------------------------------------------
+- error.txt   — diario de 7 errores con causa y solución
+- doc.md      — documentación técnica completa del código (18 secciones)
+- context.txt — este archivo (contexto de sesión)
 
 ================================================================================
 QUÉ SE CONSTRUYÓ EN ESTA SESIÓN
@@ -78,6 +87,16 @@ FASES COMPLETADAS
 8. Despliegue GitHub Pages
    - ng build --base-href "/Survey-Maker/" (desde PowerShell, NO Bash)
    - npx angular-cli-ghpages --dir=dist/survey-maker/browser
+
+9. Archivos de documentación y contexto (esta sesión)
+   - error.txt — diario de 7 errores con causa, descripción y solución
+   - doc.md    — documentación técnica de todo el código (18 secciones)
+     Ver en GitHub: https://github.com/AldoZM/Survey-Maker/blob/main/survey-maker/doc.md
+   - context.txt — contexto de sesión para retomar sin problemas
+
+10. Footer "Made by Aldo Zetina"
+    - Agregado en survey-page.component.ts
+    - Desplegado en GitHub Pages
 
 ================================================================================
 ARQUITECTURA DEL PROYECTO
@@ -207,6 +226,9 @@ POSIBLES MEJORAS FUTURAS (no implementadas)
 HISTORIAL DE COMMITS
 ================================================================================
 
+31ff0e4 docs: add comprehensive code documentation (doc.md)
+33861c5 feat(ui): add 'Made by Aldo Zetina' footer to survey page
+740f232 docs: add session context file for future development continuity
 c056f1a docs: add error diary with all bugs, causes, and fixes
 d1c1e63 fix(loader): use relative path for schema URL (base-href GitHub Pages)
 ccfddd6 feat: Survey Maker Angular 21 - implementación completa
