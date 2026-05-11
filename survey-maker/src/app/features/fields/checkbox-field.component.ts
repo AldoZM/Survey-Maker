@@ -69,6 +69,10 @@ export class CheckboxFieldComponent {
    */
   toggle(optionValue: string, checked: boolean): void {
     const current = this.value();
+    // Nunca mutamos el array existente — creamos uno nuevo con spread operator.
+    // checked=true: agregamos el valor al final del array
+    // checked=false: filtramos el valor fuera del array
+    // En ambos casos emitimos el array nuevo para que el estado central lo procese.
     const next = checked
       ? [...current, optionValue]
       : current.filter(v => v !== optionValue);

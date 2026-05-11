@@ -66,13 +66,25 @@ export class SurveyLoaderService {
    * | `survey.status()` | `ResourceStatus` | Detailed status: `Idle`, `Loading`, `Resolved`, `Error` |
    */
   readonly survey = rxResource({
+    // params es una función que retorna el valor reactivo que dispara el recurso.
+    // Cada vez que surveyId cambia, rxResource cancela la petición anterior
+    // y ejecuta stream() de nuevo con el nuevo ID.
     params: () => this.surveyId(),
+
     stream: ({ params: id }) => {
+      // Si el ID es null (estado inicial), retornamos undefined sin hacer HTTP.
+      // Esto deja el recurso en estado "Idle" — survey.value() === undefined.
       if (!id) {
         return of(undefined);
       }
-      // parseSchema() throws synchronously on invalid JSON structure;
-      // rxResource catches the error and surfaces it via survey.error()
+
+      // IMPORTANTE: path RELATIVO (sin / al inicio).
+      // Con base href "/Survey-Maker/", el navegador resuelve:
+      //   "schemas/id.json" → "https://aldozm.github.io/Survey-Maker/schemas/id.json" ✅
+      //   "/schemas/id.json" → "https://aldozm.github.io/schemas/id.json" ❌ (404)
+      //
+      // parseSchema() lanza un Error sincrónico si el JSON tiene estructura inválida.
+      // rxResource captura automáticamente ese error y lo expone en survey.error().
       return this.http
         .get<unknown>(`schemas/${id}.json`)
         .pipe(map((raw) => parseSchema(raw)));

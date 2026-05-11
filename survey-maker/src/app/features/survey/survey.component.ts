@@ -33,11 +33,15 @@ import { FieldRendererComponent } from './field-renderer.component';
     <mat-card class="survey-card">
       <mat-card-header>
         <mat-card-title>{{ schema().title }}</mat-card-title>
+        <!-- @if solo renderiza el subtítulo si el schema define una descripción -->
         @if (schema().description) {
           <mat-card-subtitle>{{ schema().description }}</mat-card-subtitle>
         }
       </mat-card-header>
 
+      <!-- Barra de progreso reactiva: state.progress() es un computed() que
+           retorna 0-100 basado en campos required respondidos.
+           Se actualiza automáticamente al contestar cada campo. -->
       <mat-progress-bar
         mode="determinate"
         [value]="state.progress()"
@@ -45,6 +49,9 @@ import { FieldRendererComponent } from './field-renderer.component';
       />
 
       <mat-card-content>
+        <!-- @for itera sobre las secciones del schema.
+             track section.id es obligatorio: le dice a Angular cómo identificar
+             cada elemento del array para hacer diff eficiente del DOM. -->
         @for (section of schema().sections; track section.id) {
           <section class="survey-section">
             <h3 class="section-title">{{ section.title }}</h3>
@@ -54,6 +61,12 @@ import { FieldRendererComponent } from './field-renderer.component';
             <mat-divider />
             <div class="fields-container">
               @for (field of section.fields; track field.id) {
+                <!--
+                  [answers]: mapa { fieldId: valor } para evaluar lógica condicional
+                  [value]: valor actual del campo (string | number | string[] | null)
+                  [errorMessage]: null si válido o no tocado, mensaje si hay error
+                  (valueChange): propaga cada cambio al estado central via setAnswer()
+                -->
                 <app-field-renderer
                   [field]="field"
                   [answers]="answersAsValues()"
@@ -69,6 +82,7 @@ import { FieldRendererComponent } from './field-renderer.component';
 
       <mat-card-actions align="end">
         <span class="progress-label">{{ state.progress() }}% completado</span>
+        <!-- ?? usa el submitLabel del schema si existe, sino el texto por defecto -->
         <button mat-raised-button color="primary" (click)="onSubmit()">
           {{ schema().submitLabel ?? 'Enviar' }}
         </button>
@@ -97,12 +111,20 @@ export class SurveyComponent {
    * in FieldRendererComponent. Recomputes whenever `state.answers` changes.
    */
   readonly answersAsValues = computed(() => {
+    // state.answers() es un Record<string, FieldAnswer> — cada respuesta tiene
+    // metadata extra (isValid, isDirty). FieldRendererComponent solo necesita
+    // los valores crudos para evaluar la lógica condicional (condition.equals).
+    // Transformamos FieldAnswer → valor crudo para no exponer internos del estado.
     const entries = Object.entries(this.state.answers());
     return Object.fromEntries(entries.map(([id, ans]) => [id, ans.value]));
+    // Resultado: { "calificacion": "malo", "nombre": "Juan", ... }
   });
 
   constructor() {
-    // Initialize state whenever the schema input changes.
+    // effect() reactivo: se ejecuta cuando schema() cambia.
+    // Cuando SurveyPageComponent carga un nuevo schema via [schema]="...",
+    // este effect detecta el cambio e inicializa el estado del formulario.
+    // initSurvey() carga respuestas de localStorage o inicializa valores por defecto.
     effect(() => {
       const s = this.schema();
       if (s) this.state.initSurvey(s);
@@ -115,7 +137,13 @@ export class SurveyComponent {
    * when the full survey is valid.
    */
   onSubmit(): void {
+    // touchAll() pone isDirty=true en TODOS los campos.
+    // Sin esto, getError() filtra los errores de campos que el usuario no tocó,
+    // y el usuario no sabría cuáles campos le faltan completar al hacer submit.
     this.state.touchAll();
+
+    // Solo marcamos como enviado si todos los campos required son válidos.
+    // Si no es válido, los errores ya son visibles gracias a touchAll().
     if (this.state.isValid()) {
       console.log('Survey submitted:', this.state.answers());
       this.state.isSubmitted.set(true);

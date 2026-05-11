@@ -22,10 +22,15 @@ import { SurveyComponent } from './survey.component';
   standalone: true,
   imports: [SurveyComponent, MatProgressBarModule],
   template: `
+    <!-- Estado 1: Cargando — se muestra mientras el HTTP request está en vuelo.
+         isLoading() es true desde que se llama loadSurvey() hasta que el JSON llega. -->
     @if (loader.survey.isLoading()) {
       <mat-progress-bar mode="indeterminate" />
     }
 
+    <!-- Estado 2: Error — aparece si el HTTP falla (404, red caída) o si
+         parseSchema() lanza un Error por JSON con estructura inválida.
+         "as err" captura el valor de error en la variable local err. -->
     @if (loader.survey.error(); as err) {
       <div class="error-container">
         <p>Error al cargar la encuesta.</p>
@@ -33,6 +38,8 @@ import { SurveyComponent } from './survey.component';
       </div>
     }
 
+    <!-- Estado 3: Éxito — survey.value() tiene el SurveySchema validado.
+         "as schema" captura el valor en variable local para pasarlo como input. -->
     @if (loader.survey.value(); as schema) {
       <app-survey [schema]="schema" />
     }

@@ -41,12 +41,20 @@ import { CheckboxFieldComponent } from '../fields/checkbox-field.component';
     MatFormFieldModule,
   ],
   template: `
+    <!-- @if elimina el campo del DOM completamente cuando no es visible.
+         No es solo CSS display:none — el componente no existe en memoria. -->
     @if (isVisible()) {
       <div class="field-wrapper">
+        <!-- @let crea una variable local para no llamar a field() múltiples veces.
+             Angular 17+ — equivalente a hacer const f = field() en TypeScript. -->
         @let f = field();
 
+        <!-- @switch despacha al componente correcto según el tipo del campo.
+             Cada @case renderiza UN componente diferente con la misma interfaz:
+             recibe [field] y [value], emite (valueChange). -->
         @switch (f.type) {
           @case ('text') {
+            <!-- stringValue() garantiza que el valor sea string (no number ni array) -->
             <app-text-field
               [field]="f"
               [value]="stringValue()"
@@ -54,6 +62,7 @@ import { CheckboxFieldComponent } from '../fields/checkbox-field.component';
             />
           }
           @case ('email') {
+            <!-- email reutiliza TextFieldComponent — internamente cambia type="email" -->
             <app-text-field
               [field]="f"
               [value]="stringValue()"
@@ -61,6 +70,7 @@ import { CheckboxFieldComponent } from '../fields/checkbox-field.component';
             />
           }
           @case ('number') {
+            <!-- numberValue() convierte el valor a number | null -->
             <app-number-field
               [field]="f"
               [value]="numberValue()"
@@ -89,6 +99,7 @@ import { CheckboxFieldComponent } from '../fields/checkbox-field.component';
             />
           }
           @case ('checkbox') {
+            <!-- arrayValue() convierte el valor a string[] (array de valores seleccionados) -->
             <app-checkbox-field
               [field]="f"
               [value]="arrayValue()"
@@ -97,6 +108,8 @@ import { CheckboxFieldComponent } from '../fields/checkbox-field.component';
           }
         }
 
+        <!-- El error se muestra solo si errorMessage() no es null.
+             getError() de SurveyStateService retorna null si isDirty=false o si es válido. -->
         @if (errorMessage()) {
           <mat-error class="field-error">{{ errorMessage() }}</mat-error>
         }
@@ -142,12 +155,24 @@ export class FieldRendererComponent {
    */
   readonly isVisible = computed(() => {
     const condition = this.field().condition;
+
+    // Si el campo no tiene lógica condicional, siempre está visible
     if (!condition) return true;
+
+    // Buscamos la respuesta actual del campo del que depende este campo.
+    // condition.dependsOn contiene el ID del campo controlador.
     const answer = this.answers()[condition.dependsOn];
     const expected = condition.equals;
+
+    // condition.equals puede ser un array para aceptar múltiples valores.
+    // Ej: { dependsOn: "calificacion", equals: ["malo", "regular"] }
+    // → el campo aparece si eligieron "malo" O "regular"
     if (Array.isArray(expected)) {
       return expected.includes(answer as string);
     }
+
+    // Comparación directa para valor único.
+    // Ej: { dependsOn: "calificacion", equals: "malo" }
     return answer === expected;
   });
 
@@ -157,6 +182,8 @@ export class FieldRendererComponent {
    */
   readonly stringValue = computed(() => {
     const v = this.value();
+    // El valor guardado en FieldAnswer es `unknown` para soportar todos los tipos.
+    // Aquí garantizamos que TextFieldComponent siempre recibe un string.
     return typeof v === 'string' ? v : '';
   });
 
@@ -166,6 +193,7 @@ export class FieldRendererComponent {
    */
   readonly numberValue = computed(() => {
     const v = this.value();
+    // NumberFieldComponent espera number | null — null representa "campo vacío"
     return typeof v === 'number' ? v : null;
   });
 
@@ -175,6 +203,7 @@ export class FieldRendererComponent {
    */
   readonly arrayValue = computed(() => {
     const v = this.value();
+    // CheckboxFieldComponent espera string[] — array de valores seleccionados
     return Array.isArray(v) ? (v as string[]) : [];
   });
 }
