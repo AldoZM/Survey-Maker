@@ -72,7 +72,7 @@ export interface QuestionField {
   hint?: string;
   /** Validation rules applied to this field. */
   validation?: ValidationRule;
-  /** Options for select, radio, or checkbox fields. */
+  /** Options for select, radio, or checkbox fields. Required when type is 'select', 'radio', or 'checkbox'. */
   options?: FieldOption[];
   /** Conditional logic — field only renders when condition is met. */
   condition?: ConditionalLogic;
@@ -138,11 +138,14 @@ export interface SurveySchema {
 
 /**
  * Represents the answer state for a single field.
+ * `isValid` is computed from ValidationRule checks; `isDirty` becomes true after first user interaction.
  */
 export interface FieldAnswer {
   fieldId: string;
   value: string | string[] | number | boolean | null;
+  /** true if the value passes all ValidationRule checks for this field. */
   isValid: boolean;
+  /** true after the user has interacted with the field at least once. */
   isDirty: boolean;
 }
 
