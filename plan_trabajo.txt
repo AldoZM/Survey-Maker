@@ -1,30 +1,30 @@
-﻿Plan de Trabajo - Survey Maker (Angular 19+)
+﻿Plan de Trabajo - Survey Maker (Angular 21)
 ==========================================
 
 Objetivo:
-Desarrollar un generador de encuestas dinámico y altamente reactivo utilizando Angular 19+.
+Desarrollar un generador de encuestas dinámico y altamente reactivo utilizando Angular 21.
 
 Pilares Técnicos:
-1. Angular 19+: Uso de Signals y Control Flow moderno.
-2. Flexibilidad: Configuración total mediante archivos JSON.
-3. Escalabilidad: Arquitectura basada en componentes standalone y servicios de estado reactivos.
+1. Angular 21: Arquitectura Signal-First y Zoneless.
+2. Resource API: Carga simplificada y estable de esquemas JSON.
+3. Flexibilidad: Configuración total mediante archivos JSON.
+4. Escalabilidad: Componentes standalone y servicios de estado reactivos.
 
 Resumen de Fases:
 -----------------
-Fase 1: Setup inicial, definición de interfaces y esquema JSON.
-Fase 2: Construcción del motor de renderizado dinámico (Dynamic Form Engine).
-Fase 3: Implementación de lógica reactiva con Signals (computed, effects).
-Fase 4: Creación de Directivas y Decoradores personalizados.
-Fase 5: Pulido de UI/UX, validaciones finales y documentación.
+Fase 1: Setup inicial (Angular 21), definición de interfaces.
+Fase 2: Implementación de Resource API para carga de esquemas.
+Fase 3: Construcción del motor de renderizado dinámico (Dynamic Form Engine).
+Fase 4: Lógica reactiva avanzada con Signals y validaciones condicionales.
+Fase 5: Pulido de UI/UX, directivas finales y documentación.
 
 Detalles del Entorno:
 ---------------------
 - Repositorio: https://github.com/AldoZM/Survey-Maker
 - Ruta Local: D:\Codigo Abierto\GenEncuesta
-- Framework: Angular 19+
-- Estado: Planificación Inicial
+- Framework: Angular 21
+- Estado: Planificación Inicial (Actualizado a Angular 21)
 
 Notas:
-- Se priorizará el uso de componentes Standalone.
-- La validación será impulsada por el esquema JSON.
-- El estado de las respuestas se manejará mediante Signals para optimizar el rendimiento.
+- Se utilizará Resource API para manejar el fetching de JSON.
+- El rendimiento se optimizará mediante la eliminación de Zone.js.
