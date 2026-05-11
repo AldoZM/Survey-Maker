@@ -6,18 +6,22 @@
  * Each toggle adds or removes a value from the array without mutating state
  * directly.
  *
+ * A required asterisk is appended to the label via `RequiredMarkDirective`
+ * when `field().validation?.required` is true.
+ *
  * Used by FieldRendererComponent for field type: `checkbox`.
  */
 import { Component, input, output } from '@angular/core';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { QuestionField } from '../../core/interfaces';
+import { RequiredMarkDirective } from '../../shared/directives/required-mark.directive';
 
 @Component({
   selector: 'app-checkbox-field',
   standalone: true,
-  imports: [MatCheckboxModule],
+  imports: [MatCheckboxModule, RequiredMarkDirective],
   template: `
-    <div class="field-label">{{ field().label }}</div>
+    <div class="field-label" [appRequiredMark]="field().validation?.required ?? false">{{ field().label }}</div>
     <div class="checkbox-group">
       @for (option of field().options ?? []; track option.value) {
         <mat-checkbox

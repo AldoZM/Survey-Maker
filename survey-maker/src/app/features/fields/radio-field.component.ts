@@ -5,18 +5,22 @@
  * `mat-radio-group` and `mat-radio-button`. Options are derived from
  * `field().options`.
  *
+ * A required asterisk is appended to the label via `RequiredMarkDirective`
+ * when `field().validation?.required` is true.
+ *
  * Used by FieldRendererComponent for field type: `radio`.
  */
 import { Component, input, output } from '@angular/core';
 import { MatRadioModule } from '@angular/material/radio';
 import { QuestionField } from '../../core/interfaces';
+import { RequiredMarkDirective } from '../../shared/directives/required-mark.directive';
 
 @Component({
   selector: 'app-radio-field',
   standalone: true,
-  imports: [MatRadioModule],
+  imports: [MatRadioModule, RequiredMarkDirective],
   template: `
-    <div class="field-label">{{ field().label }}</div>
+    <div class="field-label" [appRequiredMark]="field().validation?.required ?? false">{{ field().label }}</div>
     <mat-radio-group [value]="value()" (change)="valueChange.emit($event.value)" class="radio-group">
       @for (option of field().options ?? []; track option.value) {
         <mat-radio-button [value]="option.value" [disabled]="option.disabled ?? false">

@@ -5,25 +5,30 @@
  * fields, delegating each field's rendering to `FieldRendererComponent`.
  *
  * ### State management
- * Answers are stored locally in a `signal<Record<string, unknown>>` keyed by
- * field ID. This local state will be migrated to a dedicated `SurveyStateService`
- * in a later task phase.
+ * All answer state is managed by `SurveyStateService`, which provides reactive
+ * Signals for answers, progress, and validation. The component initializes the
+ * service via `initSurvey()` whenever the schema input changes.
+ *
+ * ### Progress
+ * A Material progress bar reflects the ratio of answered required fields (0–100).
  *
  * ### Submit
- * `onSubmit()` logs current answers to the console. Full submission logic
- * (validation, service call, navigation) will be added with `SurveyStateService`.
+ * `onSubmit()` calls `state.touchAll()` to reveal validation errors, then checks
+ * `state.isValid()` before marking the survey as submitted.
  */
-import { Component, input, signal } from '@angular/core';
+import { Component, input, inject, effect, computed } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { SurveySchema } from '../../core/interfaces';
+import { SurveyStateService } from '../../core/services/survey-state.service';
 import { FieldRendererComponent } from './field-renderer.component';
 
 @Component({
   selector: 'app-survey',
   standalone: true,
-  imports: [FieldRendererComponent, MatButtonModule, MatCardModule, MatDividerModule],
+  imports: [FieldRendererComponent, MatButtonModule, MatCardModule, MatDividerModule, MatProgressBarModule],
   template: `
     <mat-card class="survey-card">
       <mat-card-header>
@@ -32,6 +37,12 @@ import { FieldRendererComponent } from './field-renderer.component';
           <mat-card-subtitle>{{ schema().description }}</mat-card-subtitle>
         }
       </mat-card-header>
+
+      <mat-progress-bar
+        mode="determinate"
+        [value]="state.progress()"
+        class="progress-bar"
+      />
 
       <mat-card-content>
         @for (section of schema().sections; track section.id) {
@@ -45,9 +56,10 @@ import { FieldRendererComponent } from './field-renderer.component';
               @for (field of section.fields; track field.id) {
                 <app-field-renderer
                   [field]="field"
-                  [answers]="answers()"
-                  [value]="answers()[field.id]"
-                  (valueChange)="setAnswer(field.id, $event)"
+                  [answers]="answersAsValues()"
+                  [value]="state.answers()[field.id]?.value"
+                  [errorMessage]="state.getError(field.id)"
+                  (valueChange)="state.setAnswer(field.id, $event)"
                 />
               }
             </div>
@@ -56,6 +68,7 @@ import { FieldRendererComponent } from './field-renderer.component';
       </mat-card-content>
 
       <mat-card-actions align="end">
+        <span class="progress-label">{{ state.progress() }}% completado</span>
         <button mat-raised-button color="primary" (click)="onSubmit()">
           {{ schema().submitLabel ?? 'Enviar' }}
         </button>
@@ -64,41 +77,48 @@ import { FieldRendererComponent } from './field-renderer.component';
   `,
   styles: [`
     .survey-card { max-width: 720px; margin: 24px auto; padding: 8px; }
+    .progress-bar { margin: 8px 0; }
     .survey-section { margin-top: 24px; }
     .section-title { font-size: 18px; font-weight: 500; margin-bottom: 4px; }
     .section-description { color: rgba(0,0,0,.6); margin-bottom: 16px; }
     .fields-container { padding-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+    .progress-label { margin-right: auto; color: rgba(0,0,0,.6); font-size: 14px; }
   `],
 })
 export class SurveyComponent {
   /** The validated survey schema to render. Provided by SurveyPageComponent. */
   readonly schema = input.required<SurveySchema>();
 
-  /**
-   * Reactive map of current field answers.
-   * Keys are field IDs; values are the typed answer for each field.
-   * Passed down to every FieldRendererComponent for conditional logic evaluation.
-   */
-  readonly answers = signal<Record<string, unknown>>({});
+  /** Centralized reactive state manager — answers, progress, validation. */
+  readonly state = inject(SurveyStateService);
 
   /**
-   * Updates the answer for a single field without mutating the existing map.
-   * Called by FieldRendererComponent's `valueChange` output.
-   *
-   * @param fieldId - The `id` of the field whose answer changed.
-   * @param value   - The new value emitted by the field component.
+   * Extracts raw values from the FieldAnswer map for conditional logic evaluation
+   * in FieldRendererComponent. Recomputes whenever `state.answers` changes.
    */
-  setAnswer(fieldId: string, value: unknown): void {
-    this.answers.update(prev => ({ ...prev, [fieldId]: value }));
+  readonly answersAsValues = computed(() => {
+    const entries = Object.entries(this.state.answers());
+    return Object.fromEntries(entries.map(([id, ans]) => [id, ans.value]));
+  });
+
+  constructor() {
+    // Initialize state whenever the schema input changes.
+    effect(() => {
+      const s = this.schema();
+      if (s) this.state.initSurvey(s);
+    });
   }
 
   /**
    * Handles the survey submit action.
-   * Currently logs answers to the console; full submission logic will be added
-   * with `SurveyStateService` in a later task phase.
+   * Marks all fields as dirty to expose validation errors, then submits only
+   * when the full survey is valid.
    */
   onSubmit(): void {
-    console.log('Survey answers:', this.answers());
-    // TODO (Task 6): delegate to SurveyStateService.submit()
+    this.state.touchAll();
+    if (this.state.isValid()) {
+      console.log('Survey submitted:', this.state.answers());
+      this.state.isSubmitted.set(true);
+    }
   }
 }

@@ -13,8 +13,13 @@
  * ### Email fields
  * Fields with `type === 'email'` are rendered via `TextFieldComponent`, which
  * internally switches the `<input>` to `type="email"`.
+ *
+ * ### Error messages
+ * When `errorMessage` is provided (non-null), it is displayed below the field
+ * using a `mat-error` element from MatFormFieldModule.
  */
 import { Component, computed, input, output } from '@angular/core';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { QuestionField } from '../../core/interfaces';
 import { TextFieldComponent } from '../fields/text-field.component';
 import { NumberFieldComponent } from '../fields/number-field.component';
@@ -33,6 +38,7 @@ import { CheckboxFieldComponent } from '../fields/checkbox-field.component';
     SelectFieldComponent,
     RadioFieldComponent,
     CheckboxFieldComponent,
+    MatFormFieldModule,
   ],
   template: `
     @if (isVisible()) {
@@ -90,10 +96,17 @@ import { CheckboxFieldComponent } from '../fields/checkbox-field.component';
             />
           }
         }
+
+        @if (errorMessage()) {
+          <mat-error class="field-error">{{ errorMessage() }}</mat-error>
+        }
       </div>
     }
   `,
-  styles: ['.field-wrapper { margin-bottom: 16px; }'],
+  styles: [
+    '.field-wrapper { margin-bottom: 16px; }',
+    '.field-error { font-size: 12px; margin-top: 4px; display: block; }',
+  ],
 })
 export class FieldRendererComponent {
   /** The field definition from the survey schema. */
@@ -107,6 +120,12 @@ export class FieldRendererComponent {
 
   /** The current value for this specific field. Type varies by field type. */
   readonly value = input<unknown>(undefined);
+
+  /**
+   * Validation error message to display below the field.
+   * Null when the field is valid or has not yet been touched.
+   */
+  readonly errorMessage = input<string | null>(null);
 
   /** Emits the new value whenever the user interacts with the field. */
   readonly valueChange = output<unknown>();
