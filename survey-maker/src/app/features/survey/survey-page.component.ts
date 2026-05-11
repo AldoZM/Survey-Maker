@@ -36,9 +36,19 @@ import { SurveyComponent } from './survey.component';
     @if (loader.survey.value(); as schema) {
       <app-survey [schema]="schema" />
     }
+
+    <footer class="app-footer">Made by Aldo Zetina</footer>
   `,
   styles: [`
     .error-container { padding: 24px; color: red; }
+    .app-footer {
+      text-align: center;
+      padding: 16px;
+      margin-top: 32px;
+      font-size: 0.85rem;
+      color: #757575;
+      border-top: 1px solid #e0e0e0;
+    }
   `],
 })
 export class SurveyPageComponent implements OnInit {
