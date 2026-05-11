@@ -1,0 +1,112 @@
+{
+  "id": "feedback-cliente-2024",
+  "title": "Encuesta de Satisfacción del Cliente",
+  "description": "Tu opinión nos ayuda a mejorar. Toma menos de 3 minutos.",
+  "version": "1.0.0",
+  "submitLabel": "Enviar mis respuestas",
+  "sections": [
+    {
+      "id": "datos-personales",
+      "title": "Datos Generales",
+      "fields": [
+        {
+          "id": "nombre",
+          "type": "text",
+          "label": "Nombre completo",
+          "placeholder": "Ej: Juan García",
+          "validation": {
+            "required": true,
+            "min": 2,
+            "max": 100
+          }
+        },
+        {
+          "id": "email",
+          "type": "email",
+          "label": "Correo electrónico",
+          "placeholder": "correo@ejemplo.com",
+          "validation": {
+            "required": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "satisfaccion",
+      "title": "Tu Experiencia",
+      "fields": [
+        {
+          "id": "nivel-satisfaccion",
+          "type": "radio",
+          "label": "¿Qué tan satisfecho estás con nuestro servicio?",
+          "validation": {
+            "required": true
+          },
+          "options": [
+            {
+              "value": "muy-satisfecho",
+              "label": "Muy satisfecho"
+            },
+            {
+              "value": "satisfecho",
+              "label": "Satisfecho"
+            },
+            {
+              "value": "neutral",
+              "label": "Neutral"
+            },
+            {
+              "value": "insatisfecho",
+              "label": "Insatisfecho"
+            },
+            {
+              "value": "muy-insatisfecho",
+              "label": "Muy insatisfecho"
+            }
+          ]
+        },
+        {
+          "id": "razon-insatisfaccion",
+          "type": "textarea",
+          "label": "¿Por qué no estás satisfecho?",
+          "placeholder": "Cuéntanos qué podríamos mejorar...",
+          "validation": {
+            "required": true,
+            "min": 10
+          },
+          "condition": {
+            "dependsOn": "nivel-satisfaccion",
+            "equals": ["insatisfecho", "muy-insatisfecho"]
+          }
+        },
+        {
+          "id": "aspectos-mejora",
+          "type": "checkbox",
+          "label": "¿Qué aspectos podríamos mejorar?",
+          "options": [
+            {
+              "value": "velocidad",
+              "label": "Velocidad del servicio"
+            },
+            {
+              "value": "calidad",
+              "label": "Calidad del producto"
+            },
+            {
+              "value": "precio",
+              "label": "Precio"
+            },
+            {
+              "value": "atencion",
+              "label": "Atención al cliente"
+            },
+            {
+              "value": "interfaz",
+              "label": "Interfaz / Experiencia digital"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
