@@ -9,13 +9,14 @@ ESTADO ACTUAL
 -------------
 - App Angular 21 completamente funcional y desplegada en GitHub Pages
 - Branch principal: main
-- Último commit: cfc8bb3 (fix: clear localStorage on submit)
+- Último commit: 6aec1dd (docs: update doc.md with success screen, localStorage fix, local dev guide)
 - GitHub Pages: rama gh-pages (manejada por angular-cli-ghpages, NO editar manual)
 - La encuesta de ejemplo carga y funciona correctamente
 - Footer "Made by Aldo Zetina" visible al final de la página
 - Pantalla de éxito al enviar: "¡Gracias por tu cooperación!" + botón reset
 - Comentarios inline detallados en todos los archivos core
 - localStorage se limpia al enviar → formulario vacío al regresar
+- doc.md actualizado con secciones 19 (pantalla éxito) y 20 (ejecución local)
 
 RUTAS IMPORTANTES
 -----------------
@@ -123,6 +124,11 @@ FASES COMPLETADAS
       de marcar isSubmitted=true
     - onSubmit() en survey.component.ts usa submitSurvey() en lugar de isSubmitted.set(true)
     - error.txt actualizado con ERROR 8 (comentarios HTML en atributos) y ERROR 9 (localStorage)
+
+14. doc.md actualizado (sesión 2)
+    - Sección 19: pantalla de éxito — flujo completo, template, submitSurvey(), resetSurvey()
+    - Sección 20: guía de ejecución local — ubicación, npm start, hot reload,
+      diferencias local vs GitHub Pages, tabla comparativa, flujo de trabajo recomendado
 
 ================================================================================
 ARQUITECTURA DEL PROYECTO
@@ -252,6 +258,7 @@ POSIBLES MEJORAS FUTURAS (no implementadas)
 HISTORIAL DE COMMITS
 ================================================================================
 
+6aec1dd docs: update doc.md with success screen, localStorage fix, and local dev guide
 cfc8bb3 fix(state): clear localStorage on submit so form resets clean
 1db69a9 feat(ui): add success screen after survey submission with reset button
 01de111 docs(comments): add detailed inline comments across all core files
