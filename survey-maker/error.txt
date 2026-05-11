@@ -146,6 +146,67 @@ Solución:
   LECCIÓN: Siempre usar PowerShell (no Bash) para comandos Angular en Windows
   cuando el argumento contiene paths con slash inicial.
 
+--------------------------------------------------------------------------------
+[ERROR 8] — Comentarios HTML dentro de atributos de elemento (NG5002)
+Fecha: 2026-05-11
+--------------------------------------------------------------------------------
+Descripción:
+  Al agregar comentarios explicativos inline al template de SurveyComponent,
+  se colocaron comentarios HTML (<!-- -->) entre los atributos del elemento
+  <app-field-renderer>. El build falló con:
+    NG5002: Opening tag "app-field-renderer" not terminated.
+    NG8113: FieldRendererComponent is not used within the template.
+
+Causa:
+  En Angular (y en HTML en general), los comentarios no pueden estar dentro
+  de la lista de atributos de un elemento abierto. El parser de Angular los
+  interpreta como cierre del tag, dejando la apertura sin terminar.
+
+  Código incorrecto:
+    <app-field-renderer
+      [field]="field"
+      <!-- Este comentario rompe el parser -->
+      [answers]="answersAsValues()"
+    />
+
+Solución:
+  Mover todos los comentarios FUERA del tag, como bloque previo al elemento:
+    <!--
+      [answers]: descripción
+      [value]: descripción
+    -->
+    <app-field-renderer
+      [field]="field"
+      [answers]="answersAsValues()"
+    />
+
+--------------------------------------------------------------------------------
+[ERROR 9] — Datos del formulario persisten al regresar tras envío (localStorage)
+Fecha: 2026-05-11
+--------------------------------------------------------------------------------
+Descripción:
+  Después de enviar la encuesta y hacer clic en "Regresar a la encuesta",
+  el formulario volvía a aparecer con los datos previamente ingresados en
+  lugar de estar vacío. El problema ocurría incluso en modo incógnito dentro
+  de la misma sesión del navegador.
+
+Causa:
+  SurveyStateService tiene un effect() que guarda cada cambio de respuestas en
+  localStorage automáticamente. Cuando resetSurvey() llama a initSurvey(),
+  este método busca datos guardados con loadFromStorage() y los restaura.
+  El resultado: los datos enviados volvían a aparecer en el formulario.
+
+  El localStorage en modo incógnito funciona igual que en modo normal DENTRO
+  de la misma sesión — solo se borra al cerrar la ventana incógnita.
+
+Solución:
+  Agregar el método submitSurvey() en SurveyStateService que:
+    1. Elimina la entrada de localStorage (localStorage.removeItem(...))
+    2. Marca isSubmitted como true
+  Reemplazar this.state.isSubmitted.set(true) en onSubmit() por
+  this.state.submitSurvey(). Así cuando initSurvey() se ejecuta al regresar,
+  no encuentra datos guardados y el formulario aparece vacío.
+
 ================================================================================
 FIN DEL DIARIO
 ================================================================================

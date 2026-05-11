@@ -182,9 +182,9 @@ export class SurveyComponent {
     // Si no es válido, los errores ya son visibles gracias a touchAll().
     if (this.state.isValid()) {
       console.log('Survey submitted:', this.state.answers());
-      // Cambiar a true dispara el @if(state.isSubmitted()) en el template,
-      // ocultando el formulario y mostrando la pantalla de éxito.
-      this.state.isSubmitted.set(true);
+      // submitSurvey(): marca como enviado Y limpia localStorage.
+      // Así al regresar al formulario, aparece vacío en lugar de con datos previos.
+      this.state.submitSurvey();
     }
   }
 

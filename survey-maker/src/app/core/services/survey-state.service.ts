@@ -135,6 +135,24 @@ export class SurveyStateService {
   }
 
   /**
+   * Marca la encuesta como enviada y borra las respuestas de localStorage.
+   * Al limpiar el storage, si el usuario regresa al formulario via resetSurvey(),
+   * verá el formulario vacío en lugar de sus respuestas anteriores.
+   */
+  submitSurvey(): void {
+    const s = this.schema();
+    if (!s) return;
+    // Eliminamos la entrada del localStorage para que al reiniciar
+    // no se restauren las respuestas previas (comportamiento limpio post-envío)
+    try {
+      localStorage.removeItem(`survey-state-${s.id}`);
+    } catch {
+      // Ignorar si localStorage no está disponible
+    }
+    this.isSubmitted.set(true);
+  }
+
+  /**
    * Updates the answer for a field and runs validation.
    * Marks the field as dirty (user has interacted).
    */
