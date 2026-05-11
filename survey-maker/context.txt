@@ -1,0 +1,245 @@
+================================================================================
+SURVEY MAKER — CONTEXTO DE SESIÓN
+Última actualización: 2026-05-11
+Repo: https://github.com/AldoZM/Survey-Maker
+Live: https://aldozm.github.io/Survey-Maker/
+================================================================================
+
+ESTADO ACTUAL
+-------------
+- App Angular 21 completamente funcional y desplegada en GitHub Pages
+- Branch principal: main
+- Último commit: c056f1a (docs: add error diary)
+- GitHub Pages: rama gh-pages (manejada por angular-cli-ghpages, NO editar manual)
+- La encuesta de ejemplo carga y funciona correctamente
+
+RUTAS IMPORTANTES
+-----------------
+Proyecto Angular:   D:\Codigo Abierto\GenEncuesta\repo\survey-maker\
+Schemas JSON:       D:\Codigo Abierto\GenEncuesta\repo\survey-maker\public\schemas\
+Documentación:      D:\Codigo Abierto\GenEncuesta\repo\survey-maker\docs\
+Diario de errores:  D:\Codigo Abierto\GenEncuesta\repo\survey-maker\error.txt
+
+================================================================================
+QUÉ SE CONSTRUYÓ EN ESTA SESIÓN
+================================================================================
+
+OBJETIVO
+--------
+Construir un generador de encuestas dinámico en Angular 21 con arquitectura
+Signal-First y Zoneless, desplegado en GitHub Pages.
+
+FASES COMPLETADAS
+-----------------
+1. Setup inicial
+   - ng new survey-maker (Angular 21, standalone, routing, SCSS)
+   - Zoneless: provideZonelessChangeDetection() en app.config.ts
+   - Angular Material azure-blue (Material 3)
+   - Reemplazar template default de Angular con <router-outlet />
+
+2. Resource API (carga de encuestas)
+   - SurveyLoaderService con rxResource (params/stream — API Angular 21)
+   - parseSchema() — validador estructural puro, lanza en JSON inválido
+   - Schemas JSON en public/schemas/ (servidos como assets estáticos)
+
+3. Motor de renderizado (Form Engine)
+   - FieldRendererComponent — dispatch por @switch (field.type)
+   - 6 componentes de campo: text, number, textarea, select, radio, checkbox
+   - Lógica condicional: isVisible computed() evalúa field.condition vs answers
+   - SurveyComponent — orquesta secciones, progreso, submit
+   - SurveyPageComponent — página routable con estados loading/error/success
+
+4. Estado reactivo (Signals)
+   - SurveyStateService — signal central de respuestas
+   - progress computed() — ratio campos requeridos respondidos (0-100)
+   - isValid computed() — todos los campos requeridos válidos
+   - Validación: required, min/max (texto=longitud, número=valor), pattern
+   - Persistencia localStorage via effect() con untracked()
+   - touchAll() para marcar sucios antes de submit
+
+5. Directivas
+   - RequiredMarkDirective — agrega asterisco (*) rojo con Renderer2
+   - FieldErrorDirective — toggle clase CSS via effect()
+
+6. Tests (Vitest)
+   - 35 tests en total
+   - schema.parser.spec.ts — parseSchema() completo
+   - survey-state.service.spec.ts — validación y estado
+   - field-renderer.component.spec.ts — renderizado condicional
+
+7. Documentación (docs/)
+   - arquitectura.md
+   - esquema-json.md
+   - resource-api.md
+   - motor-renderizado.md
+   - signals.md
+   - guia-uso.md
+
+8. Despliegue GitHub Pages
+   - ng build --base-href "/Survey-Maker/" (desde PowerShell, NO Bash)
+   - npx angular-cli-ghpages --dir=dist/survey-maker/browser
+
+================================================================================
+ARQUITECTURA DEL PROYECTO
+================================================================================
+
+survey-maker/src/app/
+├── app.config.ts           — providers: Zoneless, HttpClient, Router
+├── app.routes.ts           — lazy-load SurveyPageComponent en ruta ''
+├── app.ts                  — componente raíz con <router-outlet />
+│
+├── core/
+│   ├── interfaces/
+│   │   └── survey.interfaces.ts   — FieldType, QuestionField, SurveySchema,
+│   │                                 FieldAnswer, SurveyState, etc.
+│   ├── parsers/
+│   │   └── schema.parser.ts       — parseSchema(raw: unknown): SurveySchema
+│   └── services/
+│       ├── survey-loader.service.ts  — rxResource, carga JSON de /schemas/
+│       └── survey-state.service.ts   — signal de respuestas, computed, effect
+│
+├── features/
+│   ├── fields/
+│   │   ├── text-field.component.ts
+│   │   ├── number-field.component.ts
+│   │   ├── textarea-field.component.ts
+│   │   ├── select-field.component.ts
+│   │   ├── radio-field.component.ts
+│   │   └── checkbox-field.component.ts
+│   └── survey/
+│       ├── survey-page.component.ts    — página routable (loading/error/survey)
+│       ├── survey.component.ts         — renderiza secciones + submit
+│       └── field-renderer.component.ts — dispatch a componente de campo
+│
+└── shared/directives/
+    ├── required-mark.directive.ts  — asterisco (*) en labels
+    └── field-error.directive.ts    — toggle clase error
+
+survey-maker/public/schemas/
+└── ejemplo-feedback.json   — encuesta de ejemplo con todos los tipos de campo
+
+================================================================================
+TECNOLOGÍAS Y VERSIONES
+================================================================================
+
+Framework:      Angular 21
+UI:             Angular Material (azure-blue, Material 3, SCSS)
+Signals:        signal(), computed(), effect(), untracked()
+Resource API:   rxResource() de @angular/core/rxjs-interop
+Testing:        Vitest via @angular/build:unit-test
+Deploy:         angular-cli-ghpages
+Node/npm:       (verificar con node --version)
+
+================================================================================
+COMANDOS CRÍTICOS
+================================================================================
+
+# Desarrollo local
+cd D:\Codigo Abierto\GenEncuesta\repo\survey-maker
+npm start                    # servidor dev en localhost:4200
+
+# Tests
+npm test
+
+# Build para GitHub Pages — SIEMPRE desde PowerShell, NUNCA desde Git Bash
+# (Git Bash resuelve "/Survey-Maker/" como path POSIX → C:/Program Files/Git/Survey-Maker/)
+Set-Location "D:\Codigo Abierto\GenEncuesta\repo\survey-maker"
+npx ng build --base-href "/Survey-Maker/"
+
+# Deploy a GitHub Pages
+npx angular-cli-ghpages --dir=dist/survey-maker/browser
+
+# Agregar nueva encuesta
+# 1. Crear archivo JSON en public/schemas/<id>.json siguiendo esquema de ejemplo
+# 2. En survey-page.component.ts cambiar: this.loader.loadSurvey('<id>')
+
+================================================================================
+ESQUEMA JSON DE ENCUESTA (RESUMEN)
+================================================================================
+
+{
+  "id": "string (requerido)",
+  "title": "string (requerido)",
+  "description": "string (opcional)",
+  "sections": [
+    {
+      "id": "string",
+      "title": "string",
+      "fields": [
+        {
+          "id": "string",
+          "type": "text|number|textarea|select|radio|checkbox",
+          "label": "string",
+          "placeholder": "string (opcional)",
+          "validation": {
+            "required": boolean,
+            "min": number,      // texto=longitud mínima, número=valor mínimo
+            "max": number,      // texto=longitud máxima, número=valor máximo
+            "pattern": "regex"
+          },
+          "options": [          // requerido para select/radio/checkbox
+            { "value": "string", "label": "string" }
+          ],
+          "condition": {        // lógica condicional (opcional)
+            "dependsOn": "field-id",
+            "equals": "valor" | ["valor1", "valor2"]
+          }
+        }
+      ]
+    }
+  ]
+}
+
+================================================================================
+POSIBLES MEJORAS FUTURAS (no implementadas)
+================================================================================
+
+- Soporte para múltiples encuestas (selector de encuesta)
+- Exportar respuestas a JSON/CSV
+- Navegación entre secciones (stepper)
+- Animaciones de transición entre preguntas
+- Internacionalización (i18n)
+- Validación de pattern con mensajes personalizados
+- Campo tipo "date" o "rating"
+- Previsualización de encuesta en modo diseñador
+
+================================================================================
+HISTORIAL DE COMMITS
+================================================================================
+
+c056f1a docs: add error diary with all bugs, causes, and fixes
+d1c1e63 fix(loader): use relative path for schema URL (base-href GitHub Pages)
+ccfddd6 feat: Survey Maker Angular 21 - implementación completa
+a1a3eca docs(guia-uso): add component injection example for SurveyStateService
+646fdc3 feat(tests): add unit tests and complete documentation
+1214a34 refactor(directives): use Renderer2 for DOM creation
+0844e5a feat(state): implement SurveyStateService with Signals and custom directives
+1387ba4 feat(engine): implement Dynamic Form Engine with Signal-First rendering
+5139eb7 fix(parser): validate nested validation, options, and condition objects
+28d9f6d feat(core): implement Resource API survey loader and schema parser
+c282020 docs(interfaces): clarify JSDoc for options and FieldAnswer
+fcd2567 feat(core): define TypeScript interfaces for survey JSON schema
+106f9d8 refactor: replace default Angular welcome template with router-outlet
+a1963aa feat: initialize Angular 21 project with Zoneless + Angular Material
+cb93b36 docs: actualizar plan a Angular 21 e incluir Resource API
+45a5a1d docs: agregar plan de trabajo y documentacion tecnica inicial
+65a66d0 Initial commit
+
+================================================================================
+NOTAS IMPORTANTES PARA PRÓXIMA SESIÓN
+================================================================================
+
+1. SIEMPRE usar PowerShell para ng build --base-href, nunca Git Bash en Windows
+2. angular-cli-ghpages maneja la rama gh-pages automáticamente — no tocar manual
+3. Paths de HTTP deben ser RELATIVOS (sin / inicial) para respetar base-href
+4. rxResource usa params/stream (Angular 21) — NO request/loader (API vieja)
+5. Todos los componentes son standalone: true — no hay NgModules
+6. Arquitectura Zoneless — NO usar setTimeout, setInterval directamente;
+   usar signals y el scheduler de Angular
+7. Para agregar campo nuevo: crear componente en features/fields/, agregar case
+   en @switch de field-renderer.component.ts, agregar type en FieldType interface
+8. Tests corren con Vitest: npm test (NO ng test)
+
+================================================================================
+FIN DEL CONTEXTO
+================================================================================
