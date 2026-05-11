@@ -1,0 +1,151 @@
+================================================================================
+SURVEY MAKER — DIARIO DE ERRORES
+Proyecto: Angular 21 Signal-First Survey Generator
+Repo: https://github.com/AldoZM/Survey-Maker
+================================================================================
+
+--------------------------------------------------------------------------------
+[ERROR 1] — Template default de Angular en app.html
+Fecha: 2026-05-10
+--------------------------------------------------------------------------------
+Descripción:
+  Al crear el proyecto con `ng new`, Angular genera un app.html con ~20KB de
+  contenido de bienvenida (logos, links, documentación). El componente raíz
+  mostraba la página de bienvenida en lugar de la app.
+
+Causa:
+  Comportamiento estándar de `ng new` — genera plantilla demo en app.html.
+
+Solución:
+  Reemplazar contenido completo de app.html con:
+    <router-outlet />
+
+--------------------------------------------------------------------------------
+[ERROR 2] — mat-hint fuera de mat-form-field (NG8001)
+Fecha: 2026-05-10
+--------------------------------------------------------------------------------
+Descripción:
+  RadioFieldComponent y CheckboxFieldComponent usaban <mat-hint> directamente
+  como elemento hijo del componente. El build falló con error NG8001:
+    'mat-hint' is not a known element
+
+Causa:
+  <mat-hint> es un slot de content projection exclusivo de <mat-form-field>.
+  Radio y checkbox no usan mat-form-field, entonces mat-hint no es válido ahí.
+
+Solución:
+  Reemplazar <mat-hint> con <span class="field-hint"> en ambos componentes.
+  Agregar estilos CSS para simular el mismo aspecto visual.
+
+--------------------------------------------------------------------------------
+[ERROR 3] — document.createElement en directiva (calidad)
+Fecha: 2026-05-10
+--------------------------------------------------------------------------------
+Descripción:
+  RequiredMarkDirective usaba document.createElement('span') directamente para
+  agregar el asterisco (*) requerido al DOM.
+
+Causa:
+  Uso de API de DOM nativa en lugar del servicio Angular de abstracción.
+  Rompe compatibilidad con SSR (Server-Side Rendering) y Angular Universal.
+
+Solución:
+  Reemplazar document.createElement con Renderer2:
+    const span = this.renderer.createElement('span');
+    this.renderer.setProperty(span, 'textContent', ' *');
+    this.renderer.setStyle(span, 'color', '#f44336');
+    this.renderer.setAttribute(span, 'aria-hidden', 'true');
+    this.renderer.appendChild(this.el.nativeElement, span);
+
+--------------------------------------------------------------------------------
+[ERROR 4] — parseSchema sin validación profunda
+Fecha: 2026-05-10
+--------------------------------------------------------------------------------
+Descripción:
+  La función parseSchema() casteaba directamente los objetos anidados (validation,
+  options, condition) sin verificar su estructura. Un JSON con campos mal formados
+  pasaba la validación y causaba errores en runtime.
+
+Causa:
+  Implementación inicial incompleta del parser — solo validaba nivel superficial.
+
+Solución:
+  Agregar funciones helper privadas:
+    - parseValidation(): verifica tipos de required/min/max/pattern
+    - parseOptions(): verifica que cada FieldOption tenga value y label strings
+    - parseCondition(): verifica dependsOn (string no vacío) y equals (existe)
+
+--------------------------------------------------------------------------------
+[ERROR 5] — API incorrecta de rxResource (request/loader vs params/stream)
+Fecha: 2026-05-10
+--------------------------------------------------------------------------------
+Descripción:
+  El plan de trabajo especificaba `resource()` con las keys `request` y `loader`.
+  Angular 21 cambió la API a `rxResource()` con keys `params` y `stream`.
+  Usar la API vieja causaba errores de compilación TypeScript.
+
+Causa:
+  El plan fue escrito con la API de Angular 17-19. Angular 21 renombró las keys
+  del Resource API como parte de la estabilización del feature.
+
+Solución:
+  Usar la API correcta de Angular 21:
+    rxResource({
+      params: () => this.surveyId(),
+      stream: ({ params: id }) => { ... }
+    })
+
+--------------------------------------------------------------------------------
+[ERROR 6] — Error al cargar la encuesta en GitHub Pages (path absoluto)
+Fecha: 2026-05-10
+--------------------------------------------------------------------------------
+Descripción:
+  Al desplegar en GitHub Pages, la app mostraba "Error al cargar la encuesta."
+  La encuesta no cargaba en https://aldozm.github.io/Survey-Maker/
+
+Causa:
+  SurveyLoaderService usaba path absoluto para la petición HTTP:
+    this.http.get<unknown>(`/schemas/${id}.json`)
+  Con base href `/Survey-Maker/`, el path absoluto ignora el base href y resuelve
+  a https://aldozm.github.io/schemas/ejemplo-feedback.json (404 — falta el
+  prefijo /Survey-Maker/).
+
+Solución:
+  Cambiar a path relativo para que el navegador lo resuelva contra el base href:
+    this.http.get<unknown>(`schemas/${id}.json`)
+  Commit: d1c1e63
+
+--------------------------------------------------------------------------------
+[ERROR 7] — base href corrompido por Git Bash (POSIX path resolution)
+Fecha: 2026-05-11
+--------------------------------------------------------------------------------
+Descripción:
+  Después de un redeploy, la app mostraba pantalla en blanco. La consola del
+  navegador reportaba:
+    Not allowed to load local resource: file:///C:/Program%20Files/Git/Survey-Maker/...
+  El index.html desplegado tenía:
+    <base href="C:/Program Files/Git/Survey-Maker/">
+  En lugar de:
+    <base href="/Survey-Maker/">
+
+Causa:
+  El comando de build se ejecutó desde Git Bash (herramienta Bash en Windows):
+    npx ng build --base-href "/Survey-Maker/"
+  Git Bash en Windows usa MSYS2 que resuelve paths POSIX. El argumento
+  "/Survey-Maker/" fue interpretado como path absoluto POSIX, y MSYS2 lo
+  mapea a C:\Program Files\Git\ (raíz de la instalación de Git) resultando en
+  "C:/Program Files/Git/Survey-Maker/".
+
+Solución:
+  Ejecutar el build desde PowerShell donde los strings son literales y no
+  se aplica resolución de paths POSIX:
+    Set-Location "...survey-maker"
+    npx ng build --base-href "/Survey-Maker/"
+  PowerShell pasó "/Survey-Maker/" como string literal al CLI de Angular.
+
+  LECCIÓN: Siempre usar PowerShell (no Bash) para comandos Angular en Windows
+  cuando el argumento contiene paths con slash inicial.
+
+================================================================================
+FIN DEL DIARIO
+================================================================================
