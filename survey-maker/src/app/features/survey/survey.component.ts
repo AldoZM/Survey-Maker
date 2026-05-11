@@ -21,6 +21,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatIconModule } from '@angular/material/icon';
 import { SurveySchema } from '../../core/interfaces';
 import { SurveyStateService } from '../../core/services/survey-state.service';
 import { FieldRendererComponent } from './field-renderer.component';
@@ -28,66 +29,83 @@ import { FieldRendererComponent } from './field-renderer.component';
 @Component({
   selector: 'app-survey',
   standalone: true,
-  imports: [FieldRendererComponent, MatButtonModule, MatCardModule, MatDividerModule, MatProgressBarModule],
+  imports: [FieldRendererComponent, MatButtonModule, MatCardModule, MatDividerModule, MatProgressBarModule, MatIconModule],
   template: `
-    <mat-card class="survey-card">
-      <mat-card-header>
-        <mat-card-title>{{ schema().title }}</mat-card-title>
-        <!-- @if solo renderiza el subtítulo si el schema define una descripción -->
-        @if (schema().description) {
-          <mat-card-subtitle>{{ schema().description }}</mat-card-subtitle>
-        }
-      </mat-card-header>
+    <!-- Pantalla de éxito: se muestra cuando el usuario envió la encuesta -->
+    @if (state.isSubmitted()) {
+      <mat-card class="survey-card success-card">
+        <mat-card-content class="success-content">
+          <mat-icon class="success-icon">check_circle</mat-icon>
+          <h2 class="success-title">¡Gracias por tu cooperación!</h2>
+          <p class="success-subtitle">Tus respuestas han sido registradas.</p>
+          <button mat-raised-button color="primary" (click)="resetSurvey()">
+            Regresar a la encuesta
+          </button>
+        </mat-card-content>
+      </mat-card>
+    }
 
-      <!-- Barra de progreso reactiva: state.progress() es un computed() que
-           retorna 0-100 basado en campos required respondidos.
-           Se actualiza automáticamente al contestar cada campo. -->
-      <mat-progress-bar
-        mode="determinate"
-        [value]="state.progress()"
-        class="progress-bar"
-      />
+    <!-- Formulario principal: visible mientras isSubmitted() es false -->
+    @if (!state.isSubmitted()) {
+      <mat-card class="survey-card">
+        <mat-card-header>
+          <mat-card-title>{{ schema().title }}</mat-card-title>
+          <!-- @if solo renderiza el subtítulo si el schema define una descripción -->
+          @if (schema().description) {
+            <mat-card-subtitle>{{ schema().description }}</mat-card-subtitle>
+          }
+        </mat-card-header>
 
-      <mat-card-content>
-        <!-- @for itera sobre las secciones del schema.
-             track section.id es obligatorio: le dice a Angular cómo identificar
-             cada elemento del array para hacer diff eficiente del DOM. -->
-        @for (section of schema().sections; track section.id) {
-          <section class="survey-section">
-            <h3 class="section-title">{{ section.title }}</h3>
-            @if (section.description) {
-              <p class="section-description">{{ section.description }}</p>
-            }
-            <mat-divider />
-            <div class="fields-container">
-              @for (field of section.fields; track field.id) {
-                <!--
-                  [answers]: mapa { fieldId: valor } para evaluar lógica condicional
-                  [value]: valor actual del campo (string | number | string[] | null)
-                  [errorMessage]: null si válido o no tocado, mensaje si hay error
-                  (valueChange): propaga cada cambio al estado central via setAnswer()
-                -->
-                <app-field-renderer
-                  [field]="field"
-                  [answers]="answersAsValues()"
-                  [value]="state.answers()[field.id]?.value"
-                  [errorMessage]="state.getError(field.id)"
-                  (valueChange)="state.setAnswer(field.id, $event)"
-                />
+        <!-- Barra de progreso reactiva: state.progress() es un computed() que
+             retorna 0-100 basado en campos required respondidos.
+             Se actualiza automáticamente al contestar cada campo. -->
+        <mat-progress-bar
+          mode="determinate"
+          [value]="state.progress()"
+          class="progress-bar"
+        />
+
+        <mat-card-content>
+          <!-- @for itera sobre las secciones del schema.
+               track section.id es obligatorio: le dice a Angular cómo identificar
+               cada elemento del array para hacer diff eficiente del DOM. -->
+          @for (section of schema().sections; track section.id) {
+            <section class="survey-section">
+              <h3 class="section-title">{{ section.title }}</h3>
+              @if (section.description) {
+                <p class="section-description">{{ section.description }}</p>
               }
-            </div>
-          </section>
-        }
-      </mat-card-content>
+              <mat-divider />
+              <div class="fields-container">
+                @for (field of section.fields; track field.id) {
+                  <!--
+                    [answers]: mapa { fieldId: valor } para evaluar lógica condicional
+                    [value]: valor actual del campo (string | number | string[] | null)
+                    [errorMessage]: null si válido o no tocado, mensaje si hay error
+                    (valueChange): propaga cada cambio al estado central via setAnswer()
+                  -->
+                  <app-field-renderer
+                    [field]="field"
+                    [answers]="answersAsValues()"
+                    [value]="state.answers()[field.id]?.value"
+                    [errorMessage]="state.getError(field.id)"
+                    (valueChange)="state.setAnswer(field.id, $event)"
+                  />
+                }
+              </div>
+            </section>
+          }
+        </mat-card-content>
 
-      <mat-card-actions align="end">
-        <span class="progress-label">{{ state.progress() }}% completado</span>
-        <!-- ?? usa el submitLabel del schema si existe, sino el texto por defecto -->
-        <button mat-raised-button color="primary" (click)="onSubmit()">
-          {{ schema().submitLabel ?? 'Enviar' }}
-        </button>
-      </mat-card-actions>
-    </mat-card>
+        <mat-card-actions align="end">
+          <span class="progress-label">{{ state.progress() }}% completado</span>
+          <!-- ?? usa el submitLabel del schema si existe, sino el texto por defecto -->
+          <button mat-raised-button color="primary" (click)="onSubmit()">
+            {{ schema().submitLabel ?? 'Enviar' }}
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    }
   `,
   styles: [`
     .survey-card { max-width: 720px; margin: 24px auto; padding: 8px; }
@@ -97,6 +115,24 @@ import { FieldRendererComponent } from './field-renderer.component';
     .section-description { color: rgba(0,0,0,.6); margin-bottom: 16px; }
     .fields-container { padding-top: 16px; display: flex; flex-direction: column; gap: 8px; }
     .progress-label { margin-right: auto; color: rgba(0,0,0,.6); font-size: 14px; }
+
+    /* Pantalla de éxito */
+    .success-card { text-align: center; }
+    .success-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 48px 24px;
+    }
+    .success-icon {
+      font-size: 72px;
+      width: 72px;
+      height: 72px;
+      color: #4caf50;
+    }
+    .success-title { font-size: 24px; font-weight: 500; margin: 0; }
+    .success-subtitle { color: rgba(0,0,0,.6); margin: 0; }
   `],
 })
 export class SurveyComponent {
@@ -146,7 +182,19 @@ export class SurveyComponent {
     // Si no es válido, los errores ya son visibles gracias a touchAll().
     if (this.state.isValid()) {
       console.log('Survey submitted:', this.state.answers());
+      // Cambiar a true dispara el @if(state.isSubmitted()) en el template,
+      // ocultando el formulario y mostrando la pantalla de éxito.
       this.state.isSubmitted.set(true);
     }
+  }
+
+  /**
+   * Regresa a la encuesta limpiando las respuestas y el estado de envío.
+   * Llamado desde el botón "Regresar a la encuesta" en la pantalla de éxito.
+   */
+  resetSurvey(): void {
+    // Reinicializar con el schema actual: limpia localStorage, crea respuestas vacías
+    // y pone isSubmitted de vuelta en false → el formulario vuelve a aparecer.
+    this.state.initSurvey(this.schema());
   }
 }
