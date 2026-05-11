@@ -191,20 +191,35 @@ localStorage.removeItem('survey-state-mi-encuesta');
 
 ## Acceso al Estado Programáticamente
 
+Inyectar `SurveyStateService` en cualquier componente standalone:
+
 ```typescript
-const state = inject(SurveyStateService);
+import { Component, inject } from '@angular/core';
+import { SurveyStateService } from '../core/services';
 
-// Leer el progreso
-console.log(state.progress()); // 0–100
+@Component({ selector: 'app-my', standalone: true, template: `...` })
+export class MyComponent {
+  readonly state = inject(SurveyStateService);
 
-// Verificar si la encuesta es válida
-console.log(state.isValid()); // true/false
+  showSummary(): void {
+    console.log(this.state.progress());      // 0–100
+    console.log(this.state.isValid());       // true/false
+    console.log(this.state.getValue('nombre'));  // valor actual (unknown)
+    console.log(this.state.getError('email'));   // 'email es requerido' | null
+  }
+}
+```
 
-// Leer una respuesta específica
-console.log(state.getValue('nombre')); // 'Juan García'
+En template (con `@if` y `@let`):
 
-// Obtener error de un campo
-console.log(state.getError('email')); // 'email es requerido' | null
+```html
+@let progress = state.progress();
+<mat-progress-bar [value]="progress" />
+<span>{{ progress }}% completado</span>
+
+@if (!state.isValid()) {
+  <p>Hay campos requeridos sin completar.</p>
+}
 ```
 
 ---
