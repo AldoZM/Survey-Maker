@@ -95,6 +95,9 @@
 \usepackage{booktabs}
 \usepackage{array}
 
+% --- Índice en 2 columnas -----------------------------------
+\usepackage{multicol}
+
 % --- Encabezado y pie ---------------------------------------
 \usepackage{fancyhdr}
 \pagestyle{fancy}
@@ -156,7 +159,10 @@
   \end{tcolorbox}
 \end{titlepage}
 
+\setcounter{tocdepth}{1}
+\begin{multicols}{2}
 \tableofcontents
+\end{multicols}
 \newpage
 
 % ============================================================
