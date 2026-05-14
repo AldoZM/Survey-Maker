@@ -138,7 +138,9 @@
         \emoji{label}         & Bloque 3 — Decoradores (\texttt{@Component}, \texttt{@Injectable}, \texttt{@Pipe}) \\[4pt]
         \emoji{magic-wand}    & Bloque 4 — Directivas (atributo, estructural, \texttt{exportAs}) \\[4pt]
         \emoji{page-facing-up}& Bloque 5 — Formularios JSON (\texttt{parseSchema}, validación, condicional) \\[4pt]
-        \emoji{wrench}        & (próximos bloques aquí) \\
+        \emoji{rocket}        & Bloque 6 — Novedades Angular 17--19 (zoneless, resource, linkedSignal) \\[4pt]
+        \emoji{world-map}     & Bloque 7 — Routing y Lazy Loading \\[4pt]
+        \emoji{syringe}       & Bloque 8 — Servicios e Inyección de Dependencias \\
       \end{tabular}
     \end{tcolorbox}
   \end{minipage}
@@ -2314,6 +2316,857 @@ initSurvey(schema: SurveySchema): void {
   El código Angular sabe \textbf{cómo preguntar}.\\[0.3cm]
   \emoji{zap} La \textbf{reactividad con Signals} conecta las dos capas sin código manual.\\
   \emoji{sparkles} Cambias el JSON → el formulario cambia → el estado se adapta → la UI se actualiza.
+\end{tcolorbox}
+
+\newpage
+% ============================================================
+% ============================================================
+\part{\emoji{rocket} Bloque 6 --- Novedades Angular 17--19}
+% ============================================================
+% ============================================================
+
+\section{\emoji{brain} \emoji{thinking-face} ¿Por Qué Tantos Cambios?}
+
+Angular 17--19 fue una \textbf{revolución}, no una evolución.
+El equipo de Angular reescribió el motor de reactividad y eliminó
+dependencias históricas que hacían la app más lenta y compleja.
+
+\begin{center}
+\renewcommand{\arraystretch}{1.8}
+\begin{tabular}{>{\bfseries}p{3cm} p{4.5cm} p{4.5cm}}
+\toprule
+\emoji{label} Área & \emoji{older-man} Antes & \emoji{rocket} Angular 17+ \\
+\midrule
+Detección & Zone.js parchea todo & Zoneless + Signals \\
+Plantillas & \texttt{*ngIf}, \texttt{*ngFor} & \texttt{@if}, \texttt{@for} \\
+HTTP async & RxJS Observables & \texttt{resource()} \\
+Estado & \texttt{BehaviorSubject} & \texttt{signal()} \\
+Lazy load & \texttt{loadChildren} module & \texttt{loadComponent} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ============================================================
+\section{\emoji{sleeping-face} \emoji{zap} Zoneless --- Adiós Zone.js}
+
+\textbf{Zone.js} era la librería que Angular usaba para detectar cambios.
+Parcheaba \textbf{todas} las APIs asíncronas del browser (\texttt{setTimeout},
+\texttt{Promise}, \texttt{fetch}, eventos DOM\ldots) para saber cuándo re-renderizar.
+
+\begin{tcolorbox}[analogia, title={\emoji{detective} \emoji{magnifying-glass-tilted-left} El Espía en Todas Partes}]
+  Zone.js era como un \textbf{espía} que interceptaba \textit{cada} llamada telefónica
+  de tu app para saber cuándo actualizar la UI.\\[0.3cm]
+  \emoji{warning} Problema: el espía tiene costo. Más código descargado, más lento.\\
+  \emoji{rocket} Solución: con Signals, Angular \textbf{sabe exactamente} qué cambió
+  sin espiar nada.
+\end{tcolorbox}
+
+\subsection{\emoji{file-folder} En el Proyecto --- \texttt{app.config.ts}}
+
+\begin{lstlisting}
+// app/app.config.ts
+export const appConfig: ApplicationConfig = {
+  providers: [
+    // Captura errores no manejados del browser
+    provideBrowserGlobalErrorListeners(),
+
+    // NUEVA EN ANGULAR 18+: Elimina Zone.js completamente
+    // La app detecta cambios SOLO por Signals
+    // Beneficios: bundle 12kb mas chico, renders mas rapidos
+    provideZonelessChangeDetection(),
+
+    // Router con las rutas de la app
+    provideRouter(routes),
+
+    // HttpClient para peticiones HTTP
+    provideHttpClient(),
+  ],
+};
+\end{lstlisting}
+
+\begin{tcolorbox}[importante, title={\emoji{warning} \emoji{exclamation-mark} Requisito para Zoneless}]
+  Para usar \texttt{provideZonelessChangeDetection()}, \textbf{todos} tus componentes
+  deben usar \texttt{ChangeDetectionStrategy.OnPush} y Signals para el estado.\\[0.3cm]
+  Si tienes código que modifica variables normales fuera de Signals, la UI \textbf{no se actualizará}.
+\end{tcolorbox}
+
+% ============================================================
+\section{\emoji{satellite} \emoji{hourglass-not-done} \texttt{resource()} y \texttt{rxResource()} --- HTTP Reactivo}
+
+Angular 19 introdujo \texttt{resource()} para cargas asíncronas reactivas.
+Cuando el Signal de entrada cambia, la carga se \textbf{dispara automáticamente}.
+
+\subsection{\emoji{file-folder} En el Proyecto --- \texttt{survey-loader.service.ts}}
+
+\begin{lstlisting}
+// core/services/survey-loader.service.ts
+@Injectable({ providedIn: 'root' })
+export class SurveyLoaderService {
+
+  private readonly http     = inject(HttpClient);
+  private readonly surveyId = signal<string | null>(null);
+
+  // rxResource = resource() + RxJS Observable (para HttpClient)
+  // Automaticamente:
+  //   - cancela la peticion anterior si surveyId cambia
+  //   - expone signals de estado (isLoading, error, value)
+  //   - reintenta si el Signal de entrada cambia
+  readonly survey = rxResource({
+    request: () => this.surveyId(),
+    //              ^ Signal de entrada: cuando cambia, re-ejecuta loader
+
+    loader: ({ request: id }) => {
+      if (!id) return of(null);
+
+      return this.http
+        .get(`/schemas/${id}.json`)
+        .pipe(
+          map(raw => parseSchema(raw))
+          //   ^ lanza error si el JSON es invalido -> va a survey.error()
+        );
+    },
+  });
+
+  loadSurvey(id: string): void {
+    this.surveyId.set(id);
+  }
+}
+\end{lstlisting}
+
+\subsection{\emoji{eyes} Signals de Estado que Expone \texttt{resource()}}
+
+\begin{lstlisting}
+// Todos son Signals computados automaticamente:
+loader.survey.isLoading()  // boolean  — true mientras descarga
+loader.survey.error()      // unknown  — el error si fallo, undefined si ok
+loader.survey.value()      // T | undefined — el valor si cargo bien
+loader.survey.status()     // 'idle' | 'loading' | 'resolved' | 'error'
+
+// No necesitas manejar estado de carga manualmente
+// No necesitas try/catch en el template
+// No necesitas .unsubscribe()
+\end{lstlisting}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.8}
+\begin{tabular}{>{\bfseries}p{3cm} p{4cm} p{5cm}}
+\toprule
+\emoji{label} & \texttt{resource()} & \texttt{rxResource()} \\
+\midrule
+Loader devuelve & \texttt{Promise} & RxJS \texttt{Observable} \\
+Usa con & \texttt{fetch}, \texttt{async/await} & \texttt{HttpClient} \\
+Cancelación & Manual & Automática (unsubscribe) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ============================================================
+\section{\emoji{link} \emoji{sparkles} \texttt{linkedSignal()} --- Signal Derivado Escribible}
+
+\texttt{computed()} es \textbf{de solo lectura}.
+\texttt{linkedSignal()} es como \texttt{computed()} pero \textbf{escribible}: puedes cambiar su valor
+manualmente y también se recalcula cuando su fuente cambia.
+
+\begin{tcolorbox}[analogia, title={\emoji{slider-button} El Volumen con Reset Automático}]
+  Imagina el volumen de una canción:\\[0.3cm]
+  \emoji{musical-note} Cuando cambias de canción → el volumen vuelve al default (se recalcula solo)\\
+  \emoji{speaker-high-volume} Pero también puedes subir/bajar el volumen manualmente\\[0.3cm]
+  Eso es \texttt{linkedSignal()}: tiene valor derivado \textbf{y} es escribible.
+\end{tcolorbox}
+
+\begin{lstlisting}
+// Ejemplo: paginacion que se resetea cuando cambia el filtro
+export class ListaComponent {
+  readonly filtro     = signal('todos');
+  readonly paginaActual = linkedSignal(() => {
+    this.filtro(); // cada vez que filtro cambia...
+    return 1;     // ...vuelve a la pagina 1
+  });
+
+  // El usuario puede cambiar de pagina manualmente:
+  irAPagina(n: number): void {
+    this.paginaActual.set(n);  // escribible!
+  }
+  // Pero si cambia el filtro -> paginaActual vuelve a 1 sola
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+// Otro ejemplo: valor inicial viene del servidor, pero editable
+export class FormComponent {
+  readonly serverData = resource({ loader: () => fetchUser() });
+
+  // Inicia con el valor del servidor, pero el usuario puede editarlo
+  readonly nombre = linkedSignal(
+    () => this.serverData.value()?.nombre ?? ''
+  );
+
+  // Si el servidor devuelve un nuevo valor: nombre se actualiza
+  // Si el usuario edita: nombre cambia sin perder el binding
+}
+\end{lstlisting}
+
+% ============================================================
+\section{\emoji{frame-with-picture} \emoji{hourglass-done} \texttt{afterRender()} y \texttt{afterNextRender()}}
+
+Hooks para código que necesita ejecutarse \textbf{después de que Angular termina de renderizar}.
+Útil para librerías que manipulan el DOM directamente (charts, mapas, animaciones).
+
+\begin{lstlisting}
+export class MapaComponent {
+  private readonly contenedor = viewChild<ElementRef>('mapaContenedor');
+
+  constructor() {
+    // afterNextRender: corre UNA SOLA VEZ tras el primer render
+    // El DOM ya existe -> puedes inicializar la libreria de mapas
+    afterNextRender(() => {
+      const el = this.contenedor()?.nativeElement;
+      if (el) {
+        // Inicializa la libreria (Leaflet, Google Maps, etc.)
+        // AQUI el elemento ya existe en el DOM
+        initMap(el);
+      }
+    });
+
+    // afterRender: corre DESPUES DE CADA render
+    // Util para sincronizar librerias externas con cambios de datos
+    afterRender(() => {
+      actualizarDatosDelMapa(this.datosSignal());
+    });
+  }
+}
+\end{lstlisting}
+
+\begin{tcolorbox}[peligro, title={\emoji{warning} \emoji{skull} Por qué NO usar \texttt{ngOnInit()} para esto}]
+  \texttt{ngOnInit()} corre \textbf{antes} de que el DOM esté pintado.\\
+  Si intentas acceder a \texttt{nativeElement} ahí, puede ser \texttt{null}.\\[0.3cm]
+  \emoji{white-check-mark} \texttt{afterNextRender()} garantiza que el DOM ya existe.
+\end{tcolorbox}
+
+% ============================================================
+\section{\emoji{bridge-at-night} \emoji{handshake} \texttt{toSignal()} y \texttt{toObservable()} --- Puente RxJS}
+
+El mundo Angular 19 usa Signals, pero librerías antiguas usan RxJS Observables.
+Estos dos helpers son el \textbf{puente} entre ambos mundos.
+
+\begin{lstlisting}
+import { toSignal, toObservable } from '@angular/core/rxjs-interop';
+
+// ============================================================
+// toSignal(): Observable -> Signal
+// (ya no necesitas .subscribe() en el componente)
+// ============================================================
+export class BuscadorComponent {
+  readonly termino = signal('');
+
+  // Convierte el Observable de busqueda a Signal directamente
+  readonly resultados = toSignal(
+    toObservable(this.termino).pipe(
+    //              ^ Signal -> Observable para usar operadores RxJS
+      debounceTime(300),      // espera 300ms antes de buscar
+      distinctUntilChanged(), // no busca si el termino no cambio
+      switchMap(t => this.http.get(`/api/buscar?q=${t}`))
+    ),
+    { initialValue: [] }  // valor inicial mientras llega el primer resultado
+  );
+}
+
+// En el template: {{ resultados() }} — sin | async, sin subscribe
+\end{lstlisting}
+
+% ============================================================
+\section{\emoji{clipboard} \emoji{star} Resumen --- Bloque 6}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.8}
+\begin{tabular}{>{\bfseries}p{4cm} p{8.5cm}}
+\toprule
+\emoji{label} Novedad & \emoji{memo} Para qué \\
+\midrule
+\texttt{provideZonelessChangeDetection()} & Elimina Zone.js; detección por Signals \\
+\texttt{resource()} & Carga asíncrona con Promise, reactiva por Signal \\
+\texttt{rxResource()} & Igual pero con Observable (para HttpClient) \\
+\texttt{linkedSignal()} & Signal derivado \textbf{y} escribible \\
+\texttt{afterRender()} & Código post-render (cada vez) \\
+\texttt{afterNextRender()} & Código post-primer-render (inicializar DOM) \\
+\texttt{toSignal()} & Observable → Signal (sin \texttt{subscribe}) \\
+\texttt{toObservable()} & Signal → Observable (para usar pipes RxJS) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\newpage
+% ============================================================
+% ============================================================
+\part{\emoji{world-map} Bloque 7 --- Routing y Lazy Loading}
+% ============================================================
+% ============================================================
+
+\section{\emoji{brain} \emoji{thinking-face} ¿Qué es el Router?}
+
+El Router de Angular controla \textbf{qué componente se muestra} según la URL del navegador,
+\textbf{sin recargar la página}. Eso hace que la app se sienta como una app nativa.
+
+\begin{tcolorbox}[analogia, title={\emoji{hotel} \emoji{key} El Conserje del Hotel}]
+  El Router es como el \textbf{conserje de un hotel}:\\
+  \begin{itemize}
+    \item \emoji{key} \texttt{/} → te manda al lobby (inicio)
+    \item \emoji{key} \texttt{/encuesta/feedback} → te manda al cuarto 101
+    \item \emoji{key} \texttt{/admin} → acceso solo con llave especial (guard)
+    \item \emoji{key} \texttt{/cualquier-cosa} → página 404
+  \end{itemize}
+  Cambias de cuarto \textbf{sin salir del hotel} (sin recargar la página).
+\end{tcolorbox}
+
+% ============================================================
+\section{\emoji{hammer} \emoji{wrench} Configuración --- \texttt{app.routes.ts} y \texttt{app.config.ts}}
+
+\subsection{\emoji{file-folder} En el Proyecto}
+
+\begin{lstlisting}
+// app/app.routes.ts
+export const routes: Routes = [
+  {
+    path: '',  // URL raiz: http://localhost:4200/
+    loadComponent: () =>
+      import('./features/survey/survey-page.component')
+        .then(m => m.SurveyPageComponent),
+    //          ^ Lazy loading: SurveyPageComponent se descarga
+    //            SOLO cuando el usuario navega a '/'
+    //            No esta en el bundle inicial
+  },
+];
+\end{lstlisting}
+
+\begin{lstlisting}
+// app/app.config.ts
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideZonelessChangeDetection(),
+
+    // Registra las rutas en la app
+    provideRouter(routes),
+    //             ^ recibe el array de Routes de app.routes.ts
+
+    provideHttpClient(),
+  ],
+};
+\end{lstlisting}
+
+\begin{lstlisting}
+// app/app.ts — el componente raiz
+@Component({
+  selector:   'app-root',
+  standalone:  true,
+  imports:    [RouterOutlet],
+  template:   `<router-outlet />`,
+  //           ^ Angular renderiza aqui el componente de la ruta activa
+})
+export class App { }
+\end{lstlisting}
+
+% ============================================================
+\section{\emoji{scissors} \emoji{package} Lazy Loading --- Descargar Solo lo Necesario}
+
+Sin lazy loading, \textbf{todo} el código se descarga cuando el usuario abre la app.
+Con lazy loading, cada ruta descarga su código \textbf{cuando se visita}.
+
+\begin{tcolorbox}[analogia, title={\emoji{restaurant} \emoji{fork-and-knife} El Restaurante con Menú Modular}]
+  Sin lazy loading: al entrar al restaurante te traen \textbf{todo el menú cocinado}.\\
+  Con lazy loading: solo cocinas el platillo \textbf{cuando el cliente lo pide}.\\[0.3cm]
+  Resultado: la app carga más rápido la primera vez \emoji{rocket}.
+\end{tcolorbox}
+
+\subsection{\emoji{magnifying-glass-right} Cómo ve Angular el Bundle}
+
+\begin{lstlisting}
+// Sin lazy loading:
+// main.js = 800kb (todo junto desde el inicio)
+
+// Con loadComponent lazy:
+// main.js                = 14kb  (solo lo minimo para arrancar)
+// chunk-survey-page.js   = 97kb  (se descarga al visitar '/')
+
+// El usuario ve la app en MENOS tiempo porque main.js es chico
+\end{lstlisting}
+
+\subsection{\emoji{world-map} Ruta con Parámetro Dinámico}
+
+\begin{lstlisting}
+// app.routes.ts — ejemplo con parametro :id
+export const routes: Routes = [
+  {
+    path: 'encuesta/:id',
+    //               ^ parte variable de la URL: /encuesta/feedback
+    //                                           /encuesta/satisfaccion
+    loadComponent: () =>
+      import('./features/survey/survey-page.component')
+        .then(m => m.SurveyPageComponent),
+  },
+  {
+    path: '**',         // cualquier URL no reconocida
+    loadComponent: () =>
+      import('./features/not-found/not-found.component')
+        .then(m => m.NotFoundComponent),
+  },
+];
+\end{lstlisting}
+
+\begin{lstlisting}
+// En el componente: leer el parametro :id como Signal
+import { ActivatedRoute, toSignal } from '@angular/router';
+
+export class SurveyPageComponent {
+  private readonly route = inject(ActivatedRoute);
+
+  // Angular 17+: parametros como Signals directamente
+  readonly surveyId = this.route.params.pipe(
+    map(p => p['id'])
+  );
+  // O con toSignal:
+  readonly surveyIdSignal = toSignal(
+    this.route.paramMap.pipe(map(p => p.get('id'))),
+    { initialValue: null }
+  );
+}
+\end{lstlisting}
+
+% ============================================================
+\section{\emoji{link} \emoji{computer-mouse} Navegación --- \texttt{RouterLink} y \texttt{Router}}
+
+\begin{lstlisting}
+// En template: navegacion declarativa (sin recargar la pagina)
+import { RouterLink } from '@angular/router';
+
+@Component({
+  imports: [RouterLink],
+  template: `
+    <a routerLink="/">Inicio</a>
+    <a routerLink="/encuesta/feedback">Encuesta de Feedback</a>
+    <a [routerLink]="['/encuesta', surveyId()]">Dinamico</a>
+    <!--  ^ con corchetes = evalua la expresion -->
+  `
+})
+export class NavComponent { }
+\end{lstlisting}
+
+\begin{lstlisting}
+// En TypeScript: navegacion programatica
+export class MiComponente {
+  private readonly router = inject(Router);
+
+  irAInicio(): void {
+    this.router.navigate(['/']);
+  }
+
+  irAEncuesta(id: string): void {
+    this.router.navigate(['/encuesta', id]);
+    // navega a: /encuesta/feedback (por ejemplo)
+  }
+
+  // Con query params: /buscar?q=angular&pagina=2
+  buscar(termino: string): void {
+    this.router.navigate(['/buscar'], {
+      queryParams: { q: termino, pagina: 1 }
+    });
+  }
+}
+\end{lstlisting}
+
+% ============================================================
+\section{\emoji{police-car-light} \emoji{lock} Guards --- Proteger Rutas}
+
+Los \textbf{guards} son funciones que deciden si el usuario \textbf{puede acceder a una ruta}.
+
+\begin{lstlisting}
+// guard como funcion (Angular 15+, moderno)
+export const authGuard: CanActivateFn = (route, state) => {
+  const auth = inject(AuthService);
+
+  if (auth.isLoggedIn()) {
+    return true;  // puede pasar
+  }
+
+  // No puede pasar: redirigir al login
+  const router = inject(Router);
+  return router.createUrlTree(['/login'], {
+    queryParams: { returnUrl: state.url }
+  });
+};
+
+// Aplicar el guard a una ruta:
+export const routes: Routes = [
+  {
+    path:       'admin',
+    canActivate: [authGuard],
+    //            ^ se ejecuta ANTES de renderizar el componente
+    loadComponent: () =>
+      import('./features/admin/admin.component')
+        .then(m => m.AdminComponent),
+  },
+];
+\end{lstlisting}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.8}
+\begin{tabular}{>{\ttfamily\bfseries}p{3.5cm} p{8.5cm}}
+\toprule
+Guard & Cuándo se ejecuta \\
+\midrule
+canActivate & Antes de entrar a la ruta \\
+canDeactivate & Antes de salir de la ruta (ej: ``¿descartar cambios?'') \\
+canActivateChild & Antes de entrar a rutas hijas \\
+resolve & Antes de entrar: carga datos necesarios \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ============================================================
+\section{\emoji{clipboard} \emoji{star} Resumen --- Bloque 7}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.8}
+\begin{tabular}{>{\bfseries}p{4cm} p{8.5cm}}
+\toprule
+\emoji{label} Concepto & \emoji{memo} Para qué \\
+\midrule
+\texttt{provideRouter(routes)} & Registra el router en la app \\
+\texttt{Routes} array & Define URL → componente \\
+\texttt{loadComponent} & Lazy load: descarga el componente solo cuando se visita \\
+\texttt{<router-outlet>} & Dónde Angular renderiza el componente activo \\
+\texttt{routerLink} & Navegar sin recargar la página (en template) \\
+\texttt{Router.navigate()} & Navegar programáticamente (en TypeScript) \\
+\texttt{ActivatedRoute} & Leer parámetros de la URL actual \\
+\texttt{canActivate} guard & Proteger rutas (auth, permisos) \\
+\texttt{path: '**'} & Catch-all: página 404 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\newpage
+% ============================================================
+% ============================================================
+\part{\emoji{syringe} Bloque 8 --- Servicios e Inyección de Dependencias}
+% ============================================================
+% ============================================================
+
+\section{\emoji{brain} \emoji{thinking-face} ¿Qué es la Inyección de Dependencias?}
+
+La Inyección de Dependencias (DI) es un patrón donde \textbf{Angular crea y entrega}
+los objetos (servicios) que tu componente necesita. Tú no los instancias manualmente.
+
+\begin{tcolorbox}[analogia, title={\emoji{convenience-store} \emoji{package} El Almacén Central}]
+  Imagina una fábrica con un \textbf{almacén central}:
+  \begin{itemize}
+    \item \emoji{package} Cada herramienta (servicio) está guardada en el almacén
+    \item \emoji{worker} Cuando un obrero (componente) necesita una herramienta, la \textbf{pide}
+    \item \emoji{handshake} El almacén se la entrega --- no necesita fabricarla él mismo
+    \item \emoji{recycle} Si dos obreros piden la misma herramienta: reciben el \textbf{mismo objeto} (singleton)
+  \end{itemize}
+  El ``almacén'' es el \textbf{Injector} de Angular.
+\end{tcolorbox}
+
+\begin{tcolorbox}[importante, title={\emoji{question} \emoji{light-bulb} ¿Por qué no hacer \texttt{new MiServicio()}?}]
+  \begin{itemize}
+    \item \emoji{x} \texttt{new}: creas una instancia nueva por componente → datos no compartidos
+    \item \emoji{x} Tests: no puedes sustituir el servicio real por un mock fácilmente
+    \item \emoji{white-check-mark} DI: Angular reutiliza la misma instancia → datos compartidos entre componentes
+    \item \emoji{white-check-mark} Tests: Angular inyecta el mock en lugar del servicio real
+  \end{itemize}
+\end{tcolorbox}
+
+% ============================================================
+\section{\emoji{wrench} \emoji{label} \texttt{@Injectable} --- Registrar un Servicio}
+
+\begin{lstlisting}
+// El decorador @Injectable le dice a Angular:
+// "Esta clase puede ser inyectada en otros lugares"
+@Injectable({
+  providedIn: 'root'
+  // 'root' = una sola instancia en TODA la app (singleton global)
+})
+export class SurveyStateService {
+  // Todos los componentes que la inyecten reciben EL MISMO objeto
+}
+\end{lstlisting}
+
+\subsection{\emoji{card-index-dividers} Niveles de \texttt{providedIn}}
+
+\begin{lstlisting}
+// 1. ROOT — singleton global (mas comun)
+@Injectable({ providedIn: 'root' })
+export class AuthService { }
+// Una instancia para toda la app.
+// Todos comparten los mismos datos.
+
+// 2. SIN providedIn — debes registrarlo manualmente
+@Injectable()
+export class FormStateService { }
+// Lo registras donde lo necesitas:
+@Component({
+  providers: [FormStateService],  // nueva instancia por cada componente
+  ...
+})
+export class FormComponent { }
+// Cuando FormComponent se destruye, FormStateService tambien.
+
+// 3. 'platform' — compartido entre multiples apps en la misma pagina
+@Injectable({ providedIn: 'platform' })
+export class ConfigService { }
+// Caso de uso: micro-frontends.
+\end{lstlisting}
+
+\begin{tcolorbox}[analogia, title={\emoji{pizza} \emoji{cook} La Cocina}]
+  \texttt{root}: una cocina central para todo el restaurante.\\
+  \texttt{providers} en componente: cada mesa tiene su propia cocina.\\
+  Al levantarse de la mesa, esa cocina desaparece.
+\end{tcolorbox}
+
+% ============================================================
+\section{\emoji{electric-plug} \emoji{sparkles} \texttt{inject()} --- DI Funcional Moderna}
+
+\begin{lstlisting}
+// VIEJO — constructor injection (Angular < 14)
+export class SurveyComponent {
+  constructor(
+    private readonly state:  SurveyStateService,
+    private readonly loader: SurveyLoaderService,
+    private readonly router: Router,
+  ) { }
+}
+
+// NUEVO — inject() funcional (Angular 14+, recomendado hoy)
+export class SurveyComponent {
+  private readonly state  = inject(SurveyStateService);
+  private readonly loader = inject(SurveyLoaderService);
+  private readonly router = inject(Router);
+}
+\end{lstlisting}
+
+\begin{tcolorbox}[regla, title={\emoji{pushpin} \emoji{star} Por qué \texttt{inject()} es Mejor}]
+  \begin{itemize}
+    \item \emoji{scissors} Sin boilerplate del constructor (menos código)
+    \item \emoji{building-construction} Puedes usar en funciones fuera de la clase (guards, interceptors)
+    \item \emoji{link} Se puede combinar con \texttt{computed()} y \texttt{effect()} directamente
+    \item \emoji{test-tube} Igual de testeable que el constructor injection
+  \end{itemize}
+\end{tcolorbox}
+
+\subsection{\emoji{warning} Regla de Contexto de Inyección}
+
+\begin{lstlisting}
+// inject() SOLO funciona dentro de un "injection context":
+//   - constructor de clase
+//   - inicializador de propiedad de clase
+//   - factory function de proveedor
+//   - runInInjectionContext()
+
+export class MiComponente {
+  // OK: inicializador de propiedad
+  private readonly service = inject(MiServicio);
+
+  ngOnInit(): void {
+    // MAL: inject() fuera de contexto -> error en runtime
+    // const s = inject(MiServicio);
+  }
+
+  constructor() {
+    // OK: dentro del constructor
+    const s = inject(MiServicio);
+  }
+}
+\end{lstlisting}
+
+% ============================================================
+\section{\emoji{jigsaw} \emoji{label} \texttt{InjectionToken} --- Inyectar Valores Primitivos}
+
+\texttt{inject()} funciona con clases, pero ¿cómo inyectas un \textbf{string} o un \textbf{objeto de config}?
+Con \texttt{InjectionToken}.
+
+\begin{lstlisting}
+// Crea el token con tipo generico
+const API_URL = new InjectionToken<string>('api-url');
+const APP_CONFIG = new InjectionToken<AppConfig>('app-config');
+
+// Registra el valor en providers
+export const appConfig: ApplicationConfig = {
+  providers: [
+    // Valor literal
+    { provide: API_URL, useValue: 'https://api.miapp.com' },
+
+    // Fabrica (puede inyectar otros servicios)
+    {
+      provide: APP_CONFIG,
+      useFactory: () => ({
+        maxFileSize: 10 * 1024 * 1024,  // 10 MB
+        allowedTypes: ['image/jpeg', 'image/png'],
+      }),
+    },
+  ],
+};
+
+// Consumir el token en un componente o servicio
+export class UploaderService {
+  private readonly apiUrl    = inject(API_URL);
+  private readonly appConfig = inject(APP_CONFIG);
+
+  upload(file: File): void {
+    if (file.size > this.appConfig.maxFileSize) {
+      throw new Error('Archivo demasiado grande');
+    }
+    // usar this.apiUrl para la peticion
+  }
+}
+\end{lstlisting}
+
+% ============================================================
+\section{\emoji{family} \emoji{building-construction} DI Jerárquica --- El Árbol de Injectors}
+
+Angular tiene un \textbf{árbol de injectors}: cada componente puede tener su propio injector
+que hereda del padre.
+
+\begin{lstlisting}
+// Jerarquia de injectors (de mayor a menor):
+// Platform Injector  (toda la plataforma)
+//   Application Injector  (providedIn: 'root')
+//     Environment Injectors (lazy routes)
+//       Node Injectors (componentes)
+
+// Cuando inyectas algo, Angular busca de ABAJO hacia ARRIBA:
+// 1. Busca en el injector del componente actual
+// 2. Si no: sube al componente padre
+// 3. Si no: sube hasta el Application Injector (root)
+
+// EJEMPLO: FormStateService local
+@Component({
+  providers: [FormStateService],  // instancia LOCAL
+  ...
+})
+export class FormComponent {
+  // Esta instancia NO se comparte con FormComponent hermanos
+  private readonly formState = inject(FormStateService);
+}
+
+// FormComponent padre crea la instancia
+// Sus componentes hijos HEREDAN esa misma instancia
+// Sus componentes HERMANOS tienen instancia independiente
+\end{lstlisting}
+
+\begin{tcolorbox}[analogia, title={\emoji{family} \emoji{house} La Casa Familiar}]
+  \emoji{office-building} \textbf{Root} = el banco del pueblo (todos pueden ir)\\
+  \emoji{house} \textbf{Component provider} = la caja de herramientas de tu casa\\
+  \emoji{child} Los hijos de tu componente usan \textbf{tu} caja de herramientas\\
+  \emoji{house} Tus \textbf{vecinos} (componentes hermanos) tienen su propia caja
+\end{tcolorbox}
+
+% ============================================================
+\section{\emoji{factory} \emoji{gear} El Patrón \texttt{provideXxx()} --- Providers Modernos}
+
+Angular 15+ popularizó el patrón de funciones \texttt{provideXxx()} para configurar servicios,
+en lugar de importar módulos gigantes.
+
+\begin{lstlisting}
+// app.config.ts — todo se configura aqui en standalone apps
+export const appConfig: ApplicationConfig = {
+  providers: [
+    // Router con configuracion adicional
+    provideRouter(
+      routes,
+      withHashLocation(),          // URL con #: /#/inicio
+      withDebugTracing(),          // log de navegacion en consola
+      withComponentInputBinding(), // route params -> @Input del componente
+    ),
+
+    // HttpClient con interceptors
+    provideHttpClient(
+      withInterceptors([authInterceptor, loggingInterceptor]),
+      withFetch(),  // usa fetch() nativo en lugar de XMLHttpRequest
+    ),
+
+    // Animaciones
+    provideAnimationsAsync(),
+
+    // Zoneless (ya visto en Bloque 6)
+    provideZonelessChangeDetection(),
+
+    // Tu propio proveedor:
+    { provide: API_URL, useValue: environment.apiUrl },
+  ],
+};
+\end{lstlisting}
+
+\begin{tcolorbox}[importante, title={\emoji{old-key} \emoji{prohibited} La Era de los NgModules Terminó}]
+  \textbf{Antes (Angular < 14):}
+  \begin{lstlisting}
+  imports: [HttpClientModule, RouterModule.forRoot(routes), BrowserModule]
+  \end{lstlisting}
+  \textbf{Ahora (Angular 15+):}
+  \begin{lstlisting}
+  providers: [provideHttpClient(), provideRouter(routes)]
+  \end{lstlisting}
+  Más explícito, más fácil de tree-shake, sin módulos gigantes.
+\end{tcolorbox}
+
+% ============================================================
+\section{\emoji{test-tube} \emoji{microscope} DI en Tests --- El Superpoder Real}
+
+La razón más importante de usar DI: \textbf{puedes sustituir servicios reales por mocks en tests}.
+
+\begin{lstlisting}
+// survey-state.service.spec.ts (simplificado)
+describe('SurveyStateService', () => {
+  let service: SurveyStateService;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        SurveyStateService,
+        // Sustituye HttpClient real por un mock que no hace peticiones reales
+        { provide: HttpClient, useValue: { get: jest.fn() } },
+      ],
+    });
+    service = TestBed.inject(SurveyStateService);
+  });
+
+  it('progress() debe ser 0 al iniciar', () => {
+    service.initSurvey(schemaDeEjemplo);
+    expect(service.progress()).toBe(0);
+    // No se hizo ninguna peticion HTTP real
+  });
+
+  it('setAnswer() valida campo requerido vacio', () => {
+    service.initSurvey(schemaDeEjemplo);
+    service.setAnswer('nombre', '');
+    expect(service.getError('nombre')).toBe('"Nombre" es requerido');
+  });
+});
+\end{lstlisting}
+
+% ============================================================
+\section{\emoji{clipboard} \emoji{star} Resumen --- Bloque 8}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.8}
+\begin{tabular}{>{\bfseries}p{4cm} p{8.5cm}}
+\toprule
+\emoji{label} Concepto & \emoji{memo} Para qué \\
+\midrule
+\texttt{@Injectable} & Marcar clase como inyectable \\
+\texttt{providedIn: 'root'} & Singleton global para toda la app \\
+\texttt{providers: [Srv]} en comp. & Instancia local, muere con el componente \\
+\texttt{inject()} & Obtener un servicio (moderno, reemplaza constructor) \\
+\texttt{InjectionToken} & Inyectar valores no-clase (strings, objetos, configs) \\
+DI jerárquica & Componentes hijos heredan el injector del padre \\
+\texttt{provideXxx()} & Configurar servicios Angular en \texttt{app.config.ts} \\
+\texttt{TestBed.inject()} & Obtener servicios en tests \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{tcolorbox}[regla, title={\emoji{graduation-cap} \emoji{trophy} La Regla de Oro de DI}]
+  \textbf{Nunca hagas \texttt{new MiServicio()}.}\\[0.3cm]
+  Siempre usa \texttt{inject()} y deja que Angular gestione el ciclo de vida.\\
+  Tus tests lo agradecerán.
 \end{tcolorbox}
 
 % ============================================================
