@@ -137,6 +137,7 @@
         \emoji{artist-palette}& Bloque 2 — Templates (\texttt{@if}, \texttt{@for}, \texttt{@defer}) \\[4pt]
         \emoji{label}         & Bloque 3 — Decoradores (\texttt{@Component}, \texttt{@Injectable}, \texttt{@Pipe}) \\[4pt]
         \emoji{magic-wand}    & Bloque 4 — Directivas (atributo, estructural, \texttt{exportAs}) \\[4pt]
+        \emoji{page-facing-up}& Bloque 5 — Formularios JSON (\texttt{parseSchema}, validación, condicional) \\[4pt]
         \emoji{wrench}        & (próximos bloques aquí) \\
       \end{tabular}
     \end{tcolorbox}
@@ -1717,6 +1718,602 @@ export class FieldErrorDirective {
     \item \emoji{scissors} \textbf{Directiva estructural}: cuando controlas si algo existe en el DOM
   \end{itemize}
   \emoji{light-bulb} La mayoría de casos: directiva de atributo. Las estructurales son raras.
+\end{tcolorbox}
+
+\newpage
+% ============================================================
+% ============================================================
+\part{\emoji{page-facing-up} Bloque 5 --- Formularios JSON}
+% ============================================================
+% ============================================================
+
+\section{\emoji{brain} \emoji{thinking-face} La Idea: Formulario sin Código}
+
+Un \textbf{formulario JSON} es un formulario cuya \textbf{estructura vive en un archivo JSON},
+no en el código TypeScript. Cambias el JSON y el formulario cambia solo.
+
+\begin{tcolorbox}[analogia, title={\emoji{cook} \emoji{memo} La Receta vs. La Cocina}]
+  Imagina una \textbf{cocina inteligente} (tu app Angular) y una \textbf{receta} (el JSON):
+  \begin{itemize}
+    \item \emoji{memo} La \textbf{receta} dice: ``pide nombre, email, y nivel de satisfacción''
+    \item \emoji{cook} La \textbf{cocina} sabe cómo preparar cada ingrediente (campo)
+    \item \emoji{fork-and-knife} El \textbf{plato final} es el formulario que ve el usuario
+  \end{itemize}
+  Para cambiar el formulario no tocas la cocina --- solo cambias la receta.\\[0.3cm]
+  \emoji{sparkles} Esto es un \textbf{formulario schema-driven}.
+\end{tcolorbox}
+
+\begin{tcolorbox}[importante, title={\emoji{question} \emoji{light-bulb} ¿Para qué sirve esto?}]
+  \begin{itemize}
+    \item \emoji{zap} Crear encuestas nuevas \textbf{sin tocar código}
+    \item \emoji{globe-with-meridians} Cargar formularios desde un servidor HTTP
+    \item \emoji{test-tube} Probar diferentes formularios con el mismo engine
+    \item \emoji{building-construction} Que un \textbf{no-programador} pueda crear formularios editando JSON
+  \end{itemize}
+\end{tcolorbox}
+
+% ============================================================
+\section{\emoji{jigsaw} \emoji{card-index} Las Interfaces --- La Gramática del JSON}
+
+Archivo: \textcolor{morado}{\texttt{core/interfaces/survey.interfaces.ts}}
+
+\begin{lstlisting}
+// ============================================================
+// La raiz: el formulario completo
+// ============================================================
+interface SurveySchema {
+  id:          string;        // identificador unico: "ejemplo-feedback"
+  title:       string;        // titulo visible: "Encuesta de Satisfaccion"
+  description?: string;       // descripcion opcional debajo del titulo
+  version:     string;        // version del schema: "1.0.0"
+  submitLabel?: string;       // texto del boton de enviar (default: "Enviar")
+  sections:    SurveySection[]; // array de secciones (al menos una)
+}
+
+// ============================================================
+// Una seccion = una "pagina" o grupo de preguntas
+// ============================================================
+interface SurveySection {
+  id:          string;          // "seccion-1"
+  title:       string;          // "Datos personales"
+  description?: string;         // descripcion de la seccion
+  fields:      QuestionField[]; // las preguntas de esta seccion
+}
+
+// ============================================================
+// Un campo = una pregunta individual
+// ============================================================
+interface QuestionField {
+  id:          string;           // "nombre", "email", "satisfaccion"
+  type:        FieldType;        // que tipo de input es
+  label:       string;           // "Tu nombre completo"
+  placeholder?: string;          // hint dentro del input
+  validation?:  ValidationRule;  // reglas de validacion
+  options?:    FieldOption[];    // para select, radio, checkbox
+  condition?:  ConditionalLogic; // cuando mostrar este campo
+}
+
+// ============================================================
+// Tipos validos de campo
+// ============================================================
+type FieldType = 'text' | 'email' | 'number' | 'textarea'
+               | 'select' | 'radio' | 'checkbox';
+
+// ============================================================
+// Reglas de validacion del campo
+// ============================================================
+interface ValidationRule {
+  required?: boolean;   // campo obligatorio
+  min?:      number;    // minimo (longitud o valor numerico)
+  max?:      number;    // maximo (longitud o valor numerico)
+  pattern?:  string;    // regex como string: "^[a-zA-Z]+$"
+  message?:  string;    // mensaje de error personalizado
+}
+
+// ============================================================
+// Opciones para select / radio / checkbox
+// ============================================================
+interface FieldOption {
+  value:     string;    // el valor que se guarda: "muy-satisfecho"
+  label:     string;    // lo que ve el usuario: "Muy satisfecho"
+  disabled?: boolean;   // opcion no seleccionable
+}
+
+// ============================================================
+// Logica condicional: "mostrar este campo solo si..."
+// ============================================================
+interface ConditionalLogic {
+  dependsOn: string;              // id del campo que controla
+  equals:    string | string[];   // valor(es) que activan este campo
+}
+\end{lstlisting}
+
+% ============================================================
+\section{\emoji{page-facing-up} \emoji{eyes} El JSON Real del Proyecto}
+
+Archivo: \textcolor{morado}{\texttt{public/schemas/ejemplo-feedback.json}}
+
+\begin{lstlisting}
+{
+  "id":      "ejemplo-feedback",
+  "title":   "Encuesta de Satisfaccion al Cliente",
+  "version": "1.0.0",
+
+  "sections": [
+    {
+      "id":    "datos-personales",
+      "title": "Tus datos",
+      "fields": [
+        {
+          "id":    "nombre",
+          "type":  "text",
+          "label": "Nombre completo",
+          "validation": { "required": true, "min": 2, "max": 80 }
+        },
+        {
+          "id":    "email",
+          "type":  "email",
+          "label": "Correo electronico",
+          "validation": { "required": true }
+        }
+      ]
+    },
+    {
+      "id":    "satisfaccion",
+      "title": "Tu experiencia",
+      "fields": [
+        {
+          "id":    "nivel",
+          "type":  "radio",
+          "label": "Nivel de satisfaccion",
+          "validation": { "required": true },
+          "options": [
+            { "value": "muy-satisfecho",    "label": "Muy satisfecho" },
+            { "value": "satisfecho",        "label": "Satisfecho" },
+            { "value": "insatisfecho",      "label": "Insatisfecho" },
+            { "value": "muy-insatisfecho",  "label": "Muy insatisfecho" }
+          ]
+        },
+        {
+          "id":    "comentarios",
+          "type":  "textarea",
+          "label": "Cuéntanos qué mejorarías",
+          "validation": { "required": true, "min": 10 },
+          "condition": {
+            "dependsOn": "nivel",
+            "equals":    ["insatisfecho", "muy-insatisfecho"]
+          }
+          // Este campo solo aparece si nivel = "insatisfecho" o "muy-insatisfecho"
+        }
+      ]
+    }
+  ]
+}
+\end{lstlisting}
+
+\begin{tcolorbox}[importante, title={\emoji{eyes} \emoji{star} Observa la Lógica Condicional}]
+  El campo \texttt{comentarios} tiene \texttt{condition.equals: ["insatisfecho", "muy-insatisfecho"]}.\\[0.3cm]
+  Esto significa: \textbf{solo aparece si el usuario eligió una opción negativa}.\\
+  Si eligió ``Muy satisfecho'' --- el campo no existe en el DOM (no es \texttt{display:none}).
+\end{tcolorbox}
+
+% ============================================================
+\section{\emoji{shield} \emoji{test-tube} \texttt{parseSchema()} --- El Guardián del JSON}
+
+Archivo: \textcolor{morado}{\texttt{core/parsers/schema.parser.ts}}
+
+\texttt{parseSchema()} recibe un JSON crudo (que puede venir de cualquier lado) y verifica
+que tenga la estructura correcta. Si algo falla, lanza un error descriptivo.
+
+\begin{tcolorbox}[analogia, title={\emoji{customs} \emoji{police-officer} El Agente de Aduanas}]
+  El JSON viene de internet --- \textbf{no puedes confiar en él}.\\
+  \texttt{parseSchema()} es el agente de aduanas que revisa cada ``maleta'' antes de dejarla pasar.\\[0.3cm]
+  Maleta correcta \emoji{white-check-mark} → pasa y el app la usa.\\
+  Maleta incorrecta \emoji{x} → error descriptivo antes de que el app explote.
+\end{tcolorbox}
+
+\begin{lstlisting}
+// core/parsers/schema.parser.ts
+export function parseSchema(raw: unknown): SurveySchema {
+
+  // Nivel 1: debe ser un objeto (no null, no array)
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    throw new Error('El schema debe ser un objeto JSON valido');
+  }
+  const obj = raw as Record<string, unknown>;
+
+  // Nivel 2: campos raiz obligatorios
+  if (typeof obj['id'] !== 'string' || !obj['id']) {
+    throw new Error('El schema debe tener un "id" de tipo string no vacio');
+  }
+  if (typeof obj['title'] !== 'string' || !obj['title']) {
+    throw new Error('El schema debe tener un "title" de tipo string no vacio');
+  }
+  if (typeof obj['version'] !== 'string') {
+    throw new Error('El schema debe tener un "version" de tipo string');
+  }
+  if (!Array.isArray(obj['sections']) || obj['sections'].length === 0) {
+    throw new Error('El schema debe tener al menos una seccion en "sections"');
+  }
+
+  // Nivel 3: valida cada seccion
+  const sections = obj['sections'].map(
+    (s, i) => parseSection(s, i)
+  );
+
+  return {
+    id:           obj['id'] as string,
+    title:        obj['title'] as string,
+    version:      obj['version'] as string,
+    description:  typeof obj['description'] === 'string' ? obj['description'] : undefined,
+    submitLabel:  typeof obj['submitLabel'] === 'string' ? obj['submitLabel'] : undefined,
+    sections,
+  };
+}
+
+// ============================================================
+// Valida una seccion
+// ============================================================
+function parseSection(raw: unknown, idx: number): SurveySection {
+  if (!raw || typeof raw !== 'object') {
+    throw new Error(`Seccion[${idx}] debe ser un objeto`);
+  }
+  const s = raw as Record<string, unknown>;
+
+  if (typeof s['id'] !== 'string' || !s['id']) {
+    throw new Error(`Seccion[${idx}] requiere "id" de tipo string`);
+  }
+  if (!Array.isArray(s['fields']) || s['fields'].length === 0) {
+    throw new Error(`Seccion "${s['id']}" debe tener al menos un campo`);
+  }
+
+  return {
+    id:     s['id'] as string,
+    title:  typeof s['title'] === 'string' ? s['title'] : '',
+    fields: s['fields'].map((f, i) => parseField(f, i, s['id'] as string)),
+  };
+}
+
+// ============================================================
+// Valida un campo individual
+// ============================================================
+const VALID_FIELD_TYPES: FieldType[] =
+  ['text', 'email', 'number', 'textarea', 'select', 'radio', 'checkbox'];
+
+function parseField(raw: unknown, idx: number, sectionId: string): QuestionField {
+  const f = raw as Record<string, unknown>;
+
+  if (typeof f['id'] !== 'string') {
+    throw new Error(`Campo[${idx}] en seccion "${sectionId}" requiere "id"`);
+  }
+  if (!VALID_FIELD_TYPES.includes(f['type'] as FieldType)) {
+    throw new Error(
+      `Campo "${f['id']}": tipo "${f['type']}" invalido. ` +
+      `Validos: ${VALID_FIELD_TYPES.join(', ')}`
+    );
+  }
+
+  return {
+    id:          f['id'] as string,
+    type:        f['type'] as FieldType,
+    label:       typeof f['label'] === 'string' ? f['label'] : '',
+    placeholder: typeof f['placeholder'] === 'string' ? f['placeholder'] : undefined,
+    validation:  f['validation'] ? parseValidation(f['validation']) : undefined,
+    options:     Array.isArray(f['options']) ? parseOptions(f['options']) : undefined,
+    condition:   f['condition'] ? parseCondition(f['condition']) : undefined,
+  };
+}
+\end{lstlisting}
+
+\begin{tcolorbox}[peligro, title={\emoji{warning} \emoji{skull} Nunca Confíes en JSON Externo}]
+  Cualquier JSON que llegue de fuera de tu app (HTTP, localStorage, archivo) puede tener\\
+  cualquier estructura. TypeScript no protege en runtime --- solo en compilación.\\[0.3cm]
+  \textbf{Siempre parsea y valida} antes de usar. \texttt{parseSchema()} hace exactamente eso.
+\end{tcolorbox}
+
+% ============================================================
+\section{\emoji{satellite} \emoji{cloud} \texttt{SurveyLoaderService} --- Cargar desde HTTP}
+
+Archivo: \textcolor{morado}{\texttt{core/services/survey-loader.service.ts}}
+
+Este servicio usa la \textbf{Resource API} de Angular 19 para cargar el JSON de forma reactiva.
+
+\begin{lstlisting}
+// core/services/survey-loader.service.ts
+@Injectable({ providedIn: 'root' })
+export class SurveyLoaderService {
+
+  private readonly http = inject(HttpClient);
+
+  // surveyId es un Signal: cuando cambia, la carga se dispara sola
+  private readonly surveyId = signal<string | null>(null);
+
+  // resource() = Angular 19: carga asíncrona reactiva
+  // Equivale a: "cada vez que surveyId cambie, haz este fetch"
+  readonly survey = resource({
+    request: () => this.surveyId(),  // dependencia reactiva
+
+    loader: async ({ request: id }) => {
+      if (!id) return null;
+
+      // 1. Descarga el JSON crudo
+      const raw = await firstValueFrom(
+        this.http.get(`/schemas/${id}.json`)
+      );
+
+      // 2. Valida y parsea con parseSchema()
+      // Si el JSON es invalido, lanza error que resource() captura
+      return parseSchema(raw);
+    },
+  });
+
+  // Metodo publico: inicia la carga de una encuesta
+  loadSurvey(id: string): void {
+    this.surveyId.set(id);
+  }
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+// En el template de survey-page.component.ts:
+// resource() expone signals de estado automaticamente:
+
+@if (loader.survey.isLoading()) {
+  <mat-progress-bar mode="indeterminate" />    // cargando...
+}
+
+@if (loader.survey.error(); as err) {
+  <p class="error">Error: {{ err }}</p>         // fallo parseSchema() o HTTP
+}
+
+@if (loader.survey.value(); as schema) {
+  <app-survey [schema]="schema" />              // schema valido!
+}
+\end{lstlisting}
+
+\begin{tcolorbox}[analogia, title={\emoji{hourglass-not-done} \emoji{zap} Resource API vs RxJS Observable}]
+  \textbf{Antes (RxJS):}
+  \begin{itemize}
+    \item \emoji{pencil} Tú manejas: loading=true, llamada HTTP, loading=false, manejo de error
+    \item \emoji{broom} Tú limpias: \texttt{.unsubscribe()} en \texttt{ngOnDestroy()}
+  \end{itemize}
+  \textbf{Ahora (resource()):}
+  \begin{itemize}
+    \item \emoji{sparkles} Angular maneja todo eso
+    \item \emoji{zap} Solo defines: ``qué cargar'' y ``cuándo recargarlo''
+  \end{itemize}
+\end{tcolorbox}
+
+% ============================================================
+\section{\emoji{test-tube} \emoji{abacus} Validación de Campos --- Dentro de \texttt{SurveyStateService}}
+
+Archivo: \textcolor{morado}{\texttt{core/services/survey-state.service.ts}}
+
+Cuando el usuario escribe algo, el servicio valida el valor contra las reglas del campo.
+
+\begin{lstlisting}
+// survey-state.service.ts (simplificado)
+private validate(field: QuestionField, value: FieldValue): string | null {
+  const v = field.validation;
+  if (!v) return null;  // sin reglas = valido siempre
+
+  const str = String(value ?? '').trim();
+
+  // Regla 1: campo requerido
+  if (v.required && !str) {
+    return v.message ?? `"${field.label}" es requerido`;
+    //       ^  mensaje personalizado del JSON, si existe
+  }
+
+  // Si esta vacio y no es requerido -> valido
+  if (!str) return null;
+
+  // Regla 2: longitud minima (para strings) o valor minimo (para numbers)
+  if (v.min !== undefined) {
+    if (field.type === 'number') {
+      if (Number(value) < v.min) return `El valor minimo es ${v.min}`;
+    } else {
+      if (str.length < v.min) return `Minimo ${v.min} caracteres`;
+    }
+  }
+
+  // Regla 3: longitud maxima
+  if (v.max !== undefined) {
+    if (field.type === 'number') {
+      if (Number(value) > v.max) return `El valor maximo es ${v.max}`;
+    } else {
+      if (str.length > v.max) return `Maximo ${v.max} caracteres`;
+    }
+  }
+
+  // Regla 4: expresion regular (viene como string en el JSON)
+  if (v.pattern) {
+    const regex = new RegExp(v.pattern);
+    //               ^ convierte el string del JSON en RegExp real
+    if (!regex.test(str)) {
+      return v.message ?? 'El formato no es valido';
+    }
+  }
+
+  return null; // ninguna regla fallo = campo valido
+}
+\end{lstlisting}
+
+\subsection{\emoji{white-check-mark} \emoji{pencil} \texttt{setAnswer()} --- Guardar + Validar}
+
+\begin{lstlisting}
+setAnswer(fieldId: string, value: FieldValue): void {
+  const schema = this.schema();
+  if (!schema) return;
+
+  // Busca la definicion del campo en el schema
+  const field = schema.sections
+    .flatMap(s => s.fields)
+    .find(f => f.id === fieldId);
+  if (!field) return;
+
+  // Valida el nuevo valor
+  const errorMsg = this.validate(field, value);
+
+  // Actualiza el Signal de respuestas
+  this.answers.update(prev => ({
+    ...prev,
+    [fieldId]: {
+      value,
+      isValid:  errorMsg === null,  // true si no hay error
+      isDirty:  true,               // el usuario lo toco
+    }
+  }));
+}
+\end{lstlisting}
+
+% ============================================================
+\section{\emoji{eye} \emoji{scissors} Lógica Condicional --- Campos que Aparecen y Desaparecen}
+
+Archivo: \textcolor{morado}{\texttt{features/survey/field-renderer.component.ts}}
+
+\begin{lstlisting}
+// El campo "comentarios" tiene: condition = { dependsOn: "nivel", equals: ["insatisfecho"] }
+// Este computed() decide si el campo debe mostrarse
+
+readonly isVisible = computed(() => {
+  const condition = this.field().condition;
+  if (!condition) return true;  // sin condicion -> siempre visible
+
+  // Lee la respuesta actual del campo que controla la visibilidad
+  const answer = this.answers()[condition.dependsOn];
+  //                              ^  Signal de answers — dependencia reactiva!
+  //              Cuando "nivel" cambie, isVisible() recalcula solo.
+
+  const expected = condition.equals;
+
+  // equals puede ser un array: cualquiera de los valores activa el campo
+  if (Array.isArray(expected)) {
+    return expected.includes(answer as string);
+  }
+  return answer === expected;
+});
+\end{lstlisting}
+
+\begin{lstlisting}
+<!-- En el template: -->
+@if (isVisible()) {
+  <!-- El campo existe en el DOM solo si la condicion se cumple -->
+  @switch (field().type) {
+    @case ('textarea') { <app-textarea-field ... /> }
+    ...
+  }
+}
+\end{lstlisting}
+
+\begin{tcolorbox}[regla, title={\emoji{zap} \emoji{sparkles} Por Qué Esto es Magia con Signals}]
+  \begin{enumerate}
+    \item Usuario selecciona ``insatisfecho'' en el radio \emoji{radio-button}
+    \item \texttt{setAnswer('nivel', 'insatisfecho')} actualiza \texttt{answers} Signal
+    \item \texttt{isVisible()} recalcula: \texttt{['insatisfecho'].includes('insatisfecho')} = \texttt{true}
+    \item Angular inserta el campo \texttt{comentarios} en el DOM \emoji{sparkles}
+  \end{enumerate}
+  \textbf{Cero código manual.} Todo sucede por la cadena reactiva de Signals.
+\end{tcolorbox}
+
+% ============================================================
+\section{\emoji{film-projector} \emoji{clapper-board} El Flujo Completo --- De JSON a Pantalla}
+
+\begin{center}
+\renewcommand{\arraystretch}{2}
+\begin{tabular}{>{\centering\bfseries}p{2.5cm} p{10cm}}
+\toprule
+\emoji{footprints} Paso & \emoji{memo} Qué pasa \\
+\midrule
+\emoji{one} JSON & \texttt{/schemas/ejemplo-feedback.json} en el servidor \\
+\emoji{two} HTTP & \texttt{SurveyLoaderService} descarga con \texttt{HttpClient} \\
+\emoji{three} Parse & \texttt{parseSchema(raw)} valida estructura y tipos \\
+\emoji{four} Schema & \texttt{SurveySchema} TypeScript tipado y validado \\
+\emoji{five} Init & \texttt{SurveyStateService.initSurvey(schema)} inicializa estado \\
+\emoji{six} Render & \texttt{SurveyComponent} itera secciones → \texttt{FieldRendererComponent} \\
+\emoji{seven} Input & Usuario escribe → \texttt{setAnswer(id, value)} → valida → Signal \\
+\emoji{eight} Reactivo & \texttt{progress()}, \texttt{isValid()}, \texttt{isVisible()} actualizan solos \\
+\emoji{nine} Submit & \texttt{touchAll()} + \texttt{isValid()} → \texttt{submitSurvey()} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{tcolorbox}[analogia, title={\emoji{factory} \emoji{conveyor-belt} La Línea de Producción}]
+  El JSON es la \textbf{materia prima}.\\
+  \texttt{parseSchema()} es el \textbf{control de calidad} en la entrada.\\
+  \texttt{SurveyStateService} es el \textbf{cerebro} que lleva el conteo.\\
+  \texttt{FieldRendererComponent} es el \textbf{ensamblador} que arma cada pieza.\\
+  El \textbf{usuario} es quien opera la línea y produce las respuestas.
+\end{tcolorbox}
+
+% ============================================================
+\section{\emoji{broom} \emoji{floppy-disk} Persistencia Automática con \texttt{localStorage}}
+
+\begin{lstlisting}
+// En SurveyStateService — dentro del constructor
+effect(() => {
+  const s = untracked(() => this.schema());
+  if (!s) return;
+
+  const answers = this.answers();  // dependencia: reacciona cuando answers cambia
+
+  try {
+    // Guarda con la llave "survey-state-{id}" para aislar cada encuesta
+    localStorage.setItem(
+      `survey-state-${s.id}`,
+      JSON.stringify(answers)
+    );
+  } catch { /* modo privado o localStorage lleno */ }
+}, { injector: this.injector });
+
+// ============================================================
+// Al inicializar, restaura si hay respuestas guardadas
+initSurvey(schema: SurveySchema): void {
+  this.schema.set(schema);
+
+  // Intenta restaurar respuestas guardadas de una sesion anterior
+  const saved = localStorage.getItem(`survey-state-${schema.id}`);
+  if (saved) {
+    try {
+      this.answers.set(JSON.parse(saved));
+      // El usuario puede cerrar la pestaña y volver con sus respuestas intactas
+    } catch { /* JSON corrupto */ }
+  }
+}
+\end{lstlisting}
+
+\begin{tcolorbox}[importante, title={\emoji{floppy-disk} \emoji{computer} Autoguardado = Google Docs Experience}]
+  El usuario puede cerrar el navegador, volver mañana,\\
+  y sus respuestas parciales siguen ahí.\\[0.3cm]
+  \emoji{pushpin} La llave \texttt{survey-state-\{id\}} permite tener \textbf{múltiples encuestas} guardadas sin pisarse.
+\end{tcolorbox}
+
+% ============================================================
+\section{\emoji{clipboard} \emoji{star} Resumen --- Bloque 5}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.8}
+\begin{tabular}{>{\bfseries}p{4.5cm} p{8cm}}
+\toprule
+\emoji{label} Pieza & \emoji{memo} Responsabilidad \\
+\midrule
+\texttt{SurveySchema} & Interfaz TypeScript que define la gramática del JSON \\
+\texttt{parseSchema()} & Valida y convierte JSON crudo a objeto tipado \\
+\texttt{SurveyLoaderService} & Descarga el JSON via HTTP con Resource API \\
+\texttt{SurveyStateService} & Estado reactivo: respuestas, progreso, validez \\
+\texttt{validate()} & Evalúa required, min, max, pattern campo a campo \\
+\texttt{isVisible} computed & Lógica condicional: campos que aparecen/desaparecen \\
+\texttt{localStorage} & Persistencia automática vía \texttt{effect()} \\
+\texttt{FieldRendererComponent} & Despacha al componente correcto según \texttt{field.type} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{tcolorbox}[regla, title={\emoji{trophy} \emoji{graduation-cap} La Gran Idea del Bloque 5}]
+  El JSON describe \textbf{qué preguntar}.\\
+  El código Angular sabe \textbf{cómo preguntar}.\\[0.3cm]
+  \emoji{zap} La \textbf{reactividad con Signals} conecta las dos capas sin código manual.\\
+  \emoji{sparkles} Cambias el JSON → el formulario cambia → el estado se adapta → la UI se actualiza.
 \end{tcolorbox}
 
 % ============================================================
