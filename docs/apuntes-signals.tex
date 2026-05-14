@@ -1,14 +1,13 @@
 % ============================================================
 %  APUNTES — Signals en Angular (Survey Maker)
-%  Compilar con: xelatex apuntes-signals.tex
+%  Compilar con: pdflatex apuntes-signals.tex
 % ============================================================
 \documentclass[12pt, a4paper]{article}
 
-% --- Codificación y fuentes (XeLaTeX) -----------------------
-\usepackage{fontspec}
-\usepackage{unicode-math}
-\setmainfont{Latin Modern Roman}
-\setmonofont{Courier New}
+% --- Codificación y fuentes (pdfLaTeX) ----------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
 
 % --- Idioma -------------------------------------------------
 \usepackage[spanish]{babel}
@@ -116,9 +115,9 @@
   {\normalsize Aldo Zetina — UNAM Ciencias de la Computación}\\[0.3cm]
   {\normalsize\color{gray} Mayo 2026}\\[2cm]
   \begin{tcolorbox}[importante, title=Cómo compilar este archivo]
-    Requiere \textbf{XeLaTeX} (no pdflatex).\\
-    Comando: \texttt{xelatex apuntes-signals.tex}\\
-    O en Overleaf: compilador \textbf{XeLaTeX}.
+    Compatible con \textbf{pdfLaTeX} y \textbf{XeLaTeX}.\\
+    Comando: \texttt{pdflatex apuntes-signals.tex}\\
+    En Overleaf: compilador por defecto funciona.
   \end{tcolorbox}
 \end{titlepage}
 
