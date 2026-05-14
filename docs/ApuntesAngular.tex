@@ -135,6 +135,8 @@
         \emoji{zap}           & Signals (\texttt{signal}, \texttt{computed}, \texttt{effect}) \\[4pt]
         \emoji{puzzle-piece}  & Bloque 1 — Componentes (\texttt{@Component}, \texttt{input}, \texttt{output}) \\[4pt]
         \emoji{artist-palette}& Bloque 2 — Templates (\texttt{@if}, \texttt{@for}, \texttt{@defer}) \\[4pt]
+        \emoji{label}         & Bloque 3 — Decoradores (\texttt{@Component}, \texttt{@Injectable}, \texttt{@Pipe}) \\[4pt]
+        \emoji{magic-wand}    & Bloque 4 — Directivas (atributo, estructural, \texttt{exportAs}) \\[4pt]
         \emoji{wrench}        & (próximos bloques aquí) \\
       \end{tabular}
     \end{tcolorbox}
@@ -1157,6 +1159,565 @@ Renderer2 & Forma segura de manipular el DOM (preferida siempre) \\
 \bottomrule
 \end{tabular}
 \end{center}
+
+\newpage
+% ============================================================
+% ============================================================
+\part{\emoji{magic-wand} Bloque 4 --- Directivas a Fondo}
+% ============================================================
+% ============================================================
+
+\section{\emoji{brain} \emoji{thinking-face} ¿Qué es una Directiva?}
+
+Una directiva es una \textbf{instrucción que le das al DOM}.
+No crea su propio HTML --- modifica o controla \textbf{elementos que ya existen}.
+
+\begin{tcolorbox}[analogia, title={\emoji{magic-wand} \emoji{top-hat} El Sombrero Mágico del DOM}]
+  Imagina que tienes un botón HTML aburrido y normal.\\[0.3cm]
+  Tú le pones un \textbf{sombrero mágico} (la directiva) encima.\\
+  Ese sombrero puede:
+  \begin{itemize}
+    \item \emoji{artist-palette} Cambiarle el color cuando el mouse pasa encima
+    \item \emoji{no-entry} Bloquearlo si el usuario no tiene permisos
+    \item \emoji{sparkles} Agregar un asterisco si el campo es requerido
+    \item \emoji{eyes} Esconder el botón en ciertas condiciones
+  \end{itemize}
+  El botón sigue siendo el mismo. El sombrero le da superpoderes.
+\end{tcolorbox}
+
+% ============================================================
+\section{\emoji{card-index-dividers} \emoji{three} Los Tres Tipos de Directivas}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.8}
+\begin{tabular}{>{\bfseries}p{3.5cm} p{4cm} p{5cm}}
+\toprule
+\emoji{label} Tipo & \emoji{question} Para qué & \emoji{magnifying-glass-right} Ejemplo \\
+\midrule
+\emoji{building-construction} Componente & Crea UI nueva & \texttt{<app-survey />} \\
+\emoji{artist-palette} Atributo & Modifica un elemento & \texttt{[appRequiredMark]} \\
+\emoji{scissors} Estructural & Agrega o quita del DOM & \texttt{@if}, \texttt{@for} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{tcolorbox}[importante, title={\emoji{light-bulb} \emoji{smiling-face-with-sunglasses} La Regla del Corchete}]
+  Los selectores con \texttt{[corchetes]} son \textbf{directivas de atributo}.\\
+  Se usan como atributos HTML: \texttt{<div [appMiDirectiva]="valor">}\\[0.3cm]
+  \emoji{pushpin} Si el selector es un nombre normal: \texttt{<app-cosa>} = componente.
+\end{tcolorbox}
+
+% ============================================================
+\section{\emoji{magnifying-glass-tilted-left} \emoji{open-book} Disección de \texttt{RequiredMarkDirective} (Proyecto Real)}
+
+Esta directiva vive en \textcolor{morado}{\texttt{shared/directives/required-mark.directive.ts}}
+y agrega un asterisco rojo \textcolor{red}{\textbf{*}} a los campos obligatorios.
+
+\begin{lstlisting}
+// shared/directives/required-mark.directive.ts
+@Directive({
+  //          [corchetes] = directiva de ATRIBUTO
+  //          Selector con nombre del input para que Angular lo matchee
+  selector:   '[appRequiredMark]',
+  standalone: true,   // no necesita NgModule (Angular moderno)
+})
+export class RequiredMarkDirective implements OnInit {
+
+  // El input tiene EL MISMO nombre que el selector!
+  // Esto permite: <label [appRequiredMark]="true">Nombre</label>
+  // Angular pasa "true" a este input automaticamente
+  readonly appRequiredMark = input<boolean>(false);
+  //                                        ^
+  //                            false = no requerido por defecto
+
+  constructor(
+    private readonly el:       ElementRef<HTMLElement>, // el elemento donde esta la directiva
+    private readonly renderer: Renderer2,               // herramienta segura para el DOM
+  ) {}
+
+  ngOnInit(): void {
+    if (this.appRequiredMark()) {         // si el campo ES requerido...
+      const span = this.renderer.createElement('span');
+      this.renderer.setProperty(span, 'textContent', ' *'); // texto: espacio + asterisco
+      this.renderer.setStyle(span, 'color', '#f44336');      // color rojo Material
+      this.renderer.appendChild(this.el.nativeElement, span);// lo pega DENTRO del label
+    }
+    // Resultado visual: "Nombre *" con el * en rojo
+  }
+}
+\end{lstlisting}
+
+\subsection{\emoji{eyes} \emoji{question} ¿Por qué el input se llama igual que el selector?}
+
+\begin{lstlisting}
+// Template del padre:
+<label [appRequiredMark]="field().validation?.required ?? false">
+  {{ field().label }}
+</label>
+
+// Angular lee: [appRequiredMark]="true"
+// Busca: un input() que se llame "appRequiredMark" en la directiva
+// Encuentra: readonly appRequiredMark = input<boolean>(false)
+// Pasa: true al input
+// Resultado: el label queda "Nombre *" con el * en rojo
+
+// Si NO tienen el mismo nombre, necesitas especificarlo:
+readonly esRequerido = input<boolean>(false, { alias: 'appRequiredMark' });
+\end{lstlisting}
+
+% ============================================================
+\section{\emoji{label} \emoji{art} Patrones de Selector para \texttt{@Directive}}
+
+\begin{lstlisting}
+// 1. Por ATRIBUTO (el mas comun)
+@Directive({ selector: '[appTooltip]' })
+// Uso: <button appTooltip="Haz click">OK</button>
+
+// 2. Por ATRIBUTO con VALOR especifico
+@Directive({ selector: '[role=button]' })
+// Activa solo en: <div role="button">
+
+// 3. Por TAG + ATRIBUTO (mas especifico)
+@Directive({ selector: 'input[appAutoFocus]' })
+// Solo activa en inputs: <input appAutoFocus>
+// NO activa en:          <div appAutoFocus>
+
+// 4. Por CLASE CSS
+@Directive({ selector: '.mi-clase-especial' })
+// Uso: <div class="mi-clase-especial">
+
+// 5. Multiples selectores (OR — activa con cualquiera)
+@Directive({ selector: '[appResaltar], [highlight]' })
+\end{lstlisting}
+
+\begin{tcolorbox}[regla, title={\emoji{pushpin} \emoji{ok-hand} Convención de Nombres}]
+  Siempre prefija tus directivas con \texttt{app} (o la sigla de tu empresa).\\
+  \texttt{[appRequiredMark]}, \texttt{[appAutoFocus]}, \texttt{[appClickTracker]}\\[0.3cm]
+  \emoji{warning} Sin prefijo puedes chocar con atributos HTML nativos o librerías de terceros.
+\end{tcolorbox}
+
+% ============================================================
+\section{\emoji{hammer} \emoji{wrench} \texttt{ElementRef} vs \texttt{Renderer2} --- La Pelea Eterna}
+
+\begin{lstlisting}
+// =============================================
+// OPCION 1: ElementRef — acceso DIRECTO al DOM
+// =============================================
+// Funciona. Pero tiene problemas serios:
+constructor(private el: ElementRef<HTMLElement>) {}
+
+this.el.nativeElement.style.backgroundColor = 'red'; // funciona
+this.el.nativeElement.innerHTML = userInput;          // PELIGROSO: XSS!!
+//                                 ^
+//          Si "userInput" viene del usuario, puede inyectar <script>
+
+// =============================================
+// OPCION 2: Renderer2 — abstraccion SEGURA
+// =============================================
+constructor(private renderer: Renderer2) {}
+
+this.renderer.setStyle(this.el.nativeElement, 'background-color', 'red');
+this.renderer.setAttribute(this.el.nativeElement, 'aria-label', 'cerrar');
+this.renderer.addClass(this.el.nativeElement, 'activo');
+this.renderer.removeClass(this.el.nativeElement, 'deshabilitado');
+this.renderer.createElement('span');           // crea elemento
+this.renderer.appendChild(padre, hijo);        // inserta en DOM
+this.renderer.removeChild(padre, hijo);        // elimina del DOM
+\end{lstlisting}
+
+\begin{tcolorbox}[peligro, title={\emoji{warning} \emoji{police-car-light} Por Qué Renderer2 es Obligatorio}]
+  \textbf{Sin Renderer2:}
+  \begin{itemize}
+    \item \emoji{skull} XSS: \texttt{innerHTML = userInput} ejecuta scripts del usuario
+    \item \emoji{collision} SSR roto: \texttt{nativeElement} no existe en servidor
+    \item \emoji{prohibited} Web Workers: el DOM no existe en hilos de trabajo
+  \end{itemize}
+  \textbf{Con Renderer2:} Angular abstrae el DOM.\\
+  Misma directiva, funciona en browser, servidor y workers.
+\end{tcolorbox}
+
+% ============================================================
+\section{\emoji{ear} \emoji{microphone} \texttt{@HostListener} --- El Micrófono de la Directiva}
+
+Escucha eventos del elemento donde está aplicada la directiva.
+
+\begin{lstlisting}
+@Directive({ selector: '[appHover]', standalone: true })
+export class HoverDirective {
+
+  constructor(
+    private readonly el:       ElementRef<HTMLElement>,
+    private readonly renderer: Renderer2,
+  ) {}
+
+  // Escucha: cuando el mouse ENTRA al elemento
+  @HostListener('mouseenter')
+  onMouseEnter(): void {
+    this.renderer.setStyle(this.el.nativeElement, 'box-shadow', '0 4px 12px rgba(0,0,0,0.2)');
+    this.renderer.addClass(this.el.nativeElement, 'hovered');
+  }
+
+  // Escucha: cuando el mouse SALE del elemento
+  @HostListener('mouseleave')
+  onMouseLeave(): void {
+    this.renderer.removeStyle(this.el.nativeElement, 'box-shadow');
+    this.renderer.removeClass(this.el.nativeElement, 'hovered');
+  }
+
+  // Escucha: tecla Escape en el DOCUMENTO completo
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    console.log('Usuario presiono Escape en cualquier parte de la pagina');
+  }
+
+  // Escucha: click con acceso al evento ($event)
+  @HostListener('click', ['$event'])
+  onClick(event: MouseEvent): void {
+    event.stopPropagation(); // evita que el click suba al padre
+    console.log('Click en X:', event.clientX, 'Y:', event.clientY);
+  }
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+<!-- Uso -->
+<mat-card appHover>
+  Esta tarjeta sube cuando el mouse entra
+</mat-card>
+\end{lstlisting}
+
+\begin{tcolorbox}[analogia, title={\emoji{microphone} \emoji{headphone} Los Tres Micrófonos}]
+  \begin{itemize}
+    \item \emoji{microphone} \texttt{'click'} --- escucha solo al \textbf{elemento host}
+    \item \emoji{studio-microphone} \texttt{'document:keydown'} --- escucha al \textbf{documento completo}
+    \item \emoji{radio} \texttt{'window:resize'} --- escucha a la \textbf{ventana entera}
+  \end{itemize}
+\end{tcolorbox}
+
+% ============================================================
+\section{\emoji{artist-palette} \emoji{hook} \texttt{@HostBinding} --- El Pincel de la Directiva}
+
+Conecta una propiedad de tu directiva a una propiedad del elemento host.
+Cuando la propiedad cambia, el elemento se actualiza automáticamente.
+
+\begin{lstlisting}
+@Directive({ selector: '[appValidationState]', standalone: true })
+export class ValidationStateDirective {
+
+  // @HostBinding('clase-css') -> agrega/quita esa clase automaticamente
+  @HostBinding('class.campo-valido')     isValido      = false;
+  @HostBinding('class.campo-invalido')   isInvalido    = false;
+  @HostBinding('class.campo-pendiente')  isPendiente   = true;
+
+  // @HostBinding('attr.aria-invalid') -> accesibilidad
+  @HostBinding('attr.aria-invalid')      ariaInvalido  = 'false';
+
+  // @HostBinding('style.borderColor') -> CSS inline
+  @HostBinding('style.borderColor')      bordeColor    = 'transparent';
+
+  // Input que el padre controla
+  readonly isValid = input<boolean | null>(null);
+
+  constructor() {
+    // effect() reacciona cuando isValid() cambia
+    effect(() => {
+      const v = this.isValid();
+      this.isValido     = v === true;
+      this.isInvalido   = v === false;
+      this.isPendiente  = v === null;
+      this.ariaInvalido = v === false ? 'true' : 'false';
+      this.bordeColor   = v === true ? '#4caf50' : v === false ? '#f44336' : 'transparent';
+      //                                ^verde                    ^rojo        ^transparente
+    });
+  }
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+<!-- Uso: el padre pasa el estado de validez -->
+<input
+  matInput
+  [appValidationState]="''"
+  [isValid]="state.isFieldValid(field().id)"
+/>
+<!-- Resultado: borde verde/rojo automatico segun validez -->
+\end{lstlisting}
+
+% ============================================================
+\section{\emoji{scissors} \emoji{scissors} Directivas Estructurales --- Controlan el DOM}
+
+Las directivas estructurales \textbf{agregan, quitan o repiten} elementos en el DOM.
+Angular 17+ las implementa con \texttt{@if}, \texttt{@for}, \texttt{@switch}.
+Pero puedes crear las tuyas propias con \texttt{TemplateRef} y \texttt{ViewContainerRef}.
+
+\begin{tcolorbox}[analogia, title={\emoji{film-frames} \emoji{scissors} La Sala de Edición}]
+  Imagina que tienes una \textbf{sala de cine} y un \textbf{editor}:
+  \begin{itemize}
+    \item \emoji{film-frames} \texttt{TemplateRef} = la \textbf{película} sin proyectar (el HTML en espera)
+    \item \emoji{movie-camera} \texttt{ViewContainerRef} = el \textbf{proyector} (controla qué se muestra)
+  \end{itemize}
+  El editor decide cuándo proyectar la película, cuántas veces, y en qué orden.
+\end{tcolorbox}
+
+\begin{lstlisting}
+// Directiva que muestra el contenido solo si el usuario tiene permiso
+@Directive({ selector: '[appSiTienePermiso]', standalone: true })
+export class SiTienePermisoDirective {
+
+  // Inyecta la "pelicula" (el HTML que envuelve la directiva)
+  private readonly template = inject(TemplateRef<unknown>);
+
+  // Inyecta el "proyector" (donde se va a insertar el HTML)
+  private readonly vc       = inject(ViewContainerRef);
+
+  // Input: los permisos requeridos
+  readonly appSiTienePermiso = input.required<string[]>();
+
+  // Servicio que sabe que puede hacer el usuario actual
+  private readonly auth = inject(AuthService);
+
+  constructor() {
+    effect(() => {
+      const permisosRequeridos = this.appSiTienePermiso();
+      const tienePermiso = permisosRequeridos.every(
+        p => this.auth.userPermisos().includes(p)
+        //   ^  Signal del servicio de autenticacion
+      );
+
+      this.vc.clear(); // borra lo que haya en el proyector
+
+      if (tienePermiso) {
+        this.vc.createEmbeddedView(this.template);
+        // ^ "proyecta la pelicula" = inserta el HTML en el DOM
+      }
+      // Si NO tiene permiso: vc.clear() y nada mas — el HTML no existe
+    });
+  }
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+<!-- Uso en template -->
+<button *appSiTienePermiso="['admin', 'editor']">
+  Editar Encuesta
+</button>
+<!-- Si el usuario no es admin+editor: el boton NO existe en el DOM -->
+<!-- No es display:none — literalmente no existe -->
+\end{lstlisting}
+
+\begin{tcolorbox}[importante, title={\emoji{light-bulb} \emoji{star} \texttt{*} vs \texttt{[ ]} en Directivas}]
+  \textbf{\texttt{*appDirectiva}} = directiva \textbf{estructural} (usa \texttt{ng-template} internamente)\\
+  \textbf{\texttt{[appDirectiva]}} = directiva de \textbf{atributo} (modifica el elemento existente)\\[0.3cm]
+  La \texttt{*} es azúcar sintáctica:
+  \texttt{*appSiTienePermiso="perms"} es igual a:
+  \texttt{<ng-template [appSiTienePermiso]="perms"><button>...</button></ng-template>}
+\end{tcolorbox}
+
+% ============================================================
+\section{\emoji{name-badge} \emoji{id-button} \texttt{exportAs} --- Directivas con Nombre}
+
+\texttt{exportAs} te permite obtener \textbf{una referencia a la directiva} desde el template
+para llamar sus métodos o leer sus propiedades directamente.
+
+\begin{lstlisting}
+// Directiva de tooltip que quieres controlar desde el template
+@Directive({
+  selector:  '[appTooltip]',
+  standalone: true,
+  exportAs:  'appTooltip',    // el nombre que usaras en el template con #
+})
+export class TooltipDirective {
+  private visible = signal(false);
+
+  // Metodos publicos que el template puede llamar
+  mostrar(): void { this.visible.set(true); }
+  ocultar(): void { this.visible.set(false); }
+  toggle():  void { this.visible.update(v => !v); }
+  estaVisible(): boolean { return this.visible(); }
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+<!-- exportAs te da la instancia de la directiva via # -->
+<span appTooltip="Haz click aqui" #miTooltip="appTooltip">
+  Texto con tooltip
+</span>
+
+<!-- Ahora puedes llamar metodos de la directiva directamente -->
+<button (click)="miTooltip.toggle()">Mostrar/Ocultar Tooltip</button>
+<button (mouseenter)="miTooltip.mostrar()" (mouseleave)="miTooltip.ocultar()">
+  Hover me
+</button>
+
+<!-- También puedes leer propiedades -->
+<p>¿Tooltip visible? {{ miTooltip.estaVisible() }}</p>
+\end{lstlisting}
+
+\begin{tcolorbox}[analogia, title={\emoji{name-badge} \emoji{handshake} El Nombre en la Gafete}]
+  \texttt{exportAs: 'appTooltip'} es como ponerle un \textbf{gafete} a la directiva.\\[0.3cm]
+  Con \texttt{\#miTooltip="appTooltip"} el template la reconoce por su gafete\\
+  y puede hablarle directamente: \texttt{miTooltip.mostrar()}.
+\end{tcolorbox}
+
+% ============================================================
+\section{\emoji{children-crossing} \emoji{magnifying-glass-right} \texttt{@ContentChild} --- Ver lo que Proyecta el Padre}
+
+\texttt{@ContentChild} permite que un componente acceda a \textbf{elementos que el padre insertó}
+dentro de él mediante \texttt{<ng-content>}.
+
+\begin{lstlisting}
+// Componente card que expone acceso a su contenido proyectado
+@Component({
+  selector:  'app-card',
+  standalone: true,
+  template: `
+    <div class="card">
+      <div class="card-header">
+        <ng-content select="[cardTitle]" />  <!-- slot para el titulo -->
+      </div>
+      <div class="card-body">
+        <ng-content />                        <!-- slot para el resto -->
+      </div>
+    </div>
+  `,
+})
+export class CardComponent {
+
+  // Obtiene referencia al elemento con atributo "cardTitle"
+  // que el padre proyecto dentro de este componente
+  @ContentChild('cardTitle') titulo?: ElementRef;
+
+  ngAfterContentInit(): void {
+    // En este hook el contenido proyectado YA EXISTE
+    if (this.titulo) {
+      console.log('El titulo es:', this.titulo.nativeElement.textContent);
+    }
+  }
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+<!-- Uso desde el padre -->
+<app-card>
+  <h2 cardTitle #cardTitle>Mi Encuesta</h2>  <!-- se proyecta en el header -->
+  <p>Descripcion de la encuesta...</p>        <!-- va al body -->
+</app-card>
+\end{lstlisting}
+
+\begin{tcolorbox}[analogia, title={\emoji{children-crossing} \emoji{eyes} El Vigilante de Entrada}]
+  \texttt{@ContentChild} es como el \textbf{vigilante de un edificio}:\\
+  sabe exactamente quién entró por la puerta (\texttt{<ng-content>})\\
+  y puede hablar con ellos, aunque él no los trajo.\\[0.3cm]
+  \emoji{pushpin} Usa \texttt{ngAfterContentInit()} — el contenido proyectado existe solo después de este hook.
+\end{tcolorbox}
+
+% ============================================================
+\section{\emoji{hammer} \emoji{wrench} Caso Práctico --- \texttt{FieldErrorDirective} Completa}
+
+Aplicación real de todo lo que vimos: directiva que muestra mensajes de error
+bajo un campo de formulario, reactiva a cambios del estado.
+
+\begin{lstlisting}
+// shared/directives/field-error.directive.ts
+@Directive({
+  selector:   '[appFieldError]',
+  standalone:  true,
+  exportAs:   'appFieldError',    // accesible desde template si se necesita
+})
+export class FieldErrorDirective {
+
+  // Input: el mensaje de error (null = sin error)
+  readonly appFieldError = input<string | null>(null);
+
+  // HostBinding: agrega clase al elemento host automaticamente
+  @HostBinding('class.campo-con-error')
+  get tienError(): boolean { return this.appFieldError() !== null; }
+
+  // Referencias para crear el span de error en el DOM
+  private readonly el       = inject(ElementRef<HTMLElement>);
+  private readonly renderer = inject(Renderer2);
+
+  private spanError: HTMLElement | null = null;
+
+  constructor() {
+    // effect() reacciona cada vez que appFieldError() cambia
+    effect(() => {
+      const mensaje = this.appFieldError();
+
+      if (mensaje) {
+        if (!this.spanError) {
+          // Primera vez: crea el span y lo inserta despues del campo
+          this.spanError = this.renderer.createElement('span');
+          this.renderer.addClass(this.spanError, 'error-message');
+          this.renderer.setStyle(this.spanError, 'color', '#f44336');
+          this.renderer.setStyle(this.spanError, 'fontSize', '12px');
+          this.renderer.setStyle(this.spanError, 'display', 'block');
+          this.renderer.setStyle(this.spanError, 'marginTop', '4px');
+          // insertAfter: inserta el span DESPUES del campo en el DOM
+          const padre = this.renderer.parentNode(this.el.nativeElement);
+          this.renderer.insertBefore(padre, this.spanError,
+            this.el.nativeElement.nextSibling);
+        }
+        // Actualiza el texto del mensaje
+        this.renderer.setProperty(this.spanError, 'textContent', mensaje);
+      } else if (this.spanError) {
+        // Sin error: elimina el span del DOM
+        const padre = this.renderer.parentNode(this.spanError);
+        this.renderer.removeChild(padre, this.spanError);
+        this.spanError = null;
+      }
+    });
+  }
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+<!-- Uso en el template del formulario -->
+<input
+  matInput
+  type="text"
+  [appFieldError]="state.getError(field().id)"
+  [(ngModel)]="valor"
+/>
+<!-- Si getError() devuelve "Campo requerido":
+     - El input recibe la clase CSS "campo-con-error"
+     - Aparece un <span> rojo debajo: "Campo requerido"
+     Si getError() devuelve null:
+     - La clase desaparece
+     - El span se elimina del DOM -->
+\end{lstlisting}
+
+% ============================================================
+\section{\emoji{clipboard} \emoji{star} Resumen --- Bloque 4}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.8}
+\begin{tabular}{>{\bfseries}p{4cm} p{8.5cm}}
+\toprule
+\emoji{label} Concepto & \emoji{memo} Para qué \\
+\midrule
+\texttt{@Directive} atributo & Modifica un elemento HTML existente \\
+\texttt{@Directive} estructural & Agrega o quita elementos del DOM \\
+\texttt{ElementRef} & Referencia al nodo DOM (con cuidado \emoji{warning}) \\
+\texttt{Renderer2} & Manipulación segura del DOM (\emoji{white-check-mark} siempre preferir) \\
+\texttt{@HostListener} & Escucha eventos del host o globales \\
+\texttt{@HostBinding} & Conecta propiedades a clases/atributos del host \\
+\texttt{TemplateRef} & La ``película'' (HTML sin renderizar) \\
+\texttt{ViewContainerRef} & El ``proyector'' (inserta/quita del DOM) \\
+\texttt{exportAs} & Da nombre a la directiva para accederla con \texttt{\#ref} \\
+\texttt{@ContentChild} & Accede a contenido proyectado por el padre \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{tcolorbox}[regla, title={\emoji{graduation-cap} \emoji{trophy} Cuándo Usar Cada Tipo}]
+  \begin{itemize}
+    \item \emoji{building-construction} \textbf{Componente}: cuando necesitas HTML nuevo (\texttt{<app-algo>})
+    \item \emoji{artist-palette} \textbf{Directiva de atributo}: cuando modificas un elemento que ya existe
+    \item \emoji{scissors} \textbf{Directiva estructural}: cuando controlas si algo existe en el DOM
+  \end{itemize}
+  \emoji{light-bulb} La mayoría de casos: directiva de atributo. Las estructurales son raras.
+\end{tcolorbox}
 
 % ============================================================
 \vfill
