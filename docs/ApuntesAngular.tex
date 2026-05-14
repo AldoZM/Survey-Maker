@@ -873,6 +873,291 @@ pipe | nombre & Transformar valor sin modificar el original \\
 \end{tabular}
 \end{center}
 
+\newpage
+% ============================================================
+% ============================================================
+\part{\emoji{label} Bloque 3 --- Decoradores}
+% ============================================================
+% ============================================================
+
+\section{\emoji{brain} ¿Qué es un Decorador?}
+
+Un decorador es una función que \textbf{agrega comportamiento} a una clase,
+método o propiedad sin modificar su código interno. Se escribe con \texttt{@}.
+
+\begin{lstlisting}
+// Sin decorador — clase normal, Angular no sabe que es
+class TextFieldComponent { }
+
+// Con decorador — Angular sabe que es un componente UI
+@Component({ selector: 'app-text-field', ... })
+class TextFieldComponent { }
+\end{lstlisting}
+
+\begin{tcolorbox}[analogia, title={\emoji{label} La Etiqueta del Producto}]
+  Un decorador es como una \textbf{etiqueta en un producto}.\\
+  La camiseta es la misma, pero la etiqueta le dice al sistema:\\
+  ``frágil'', ``lavar a mano'', ``exportación''.\\[0.3cm]
+  Angular lee esas etiquetas para saber qué hacer con cada clase.
+\end{tcolorbox}
+
+% ============================================================
+\section{\emoji{building-construction} \texttt{@Component} --- ``Esto es una pieza de UI''}
+
+Ya visto en Bloque 1. Adición importante: \texttt{ChangeDetectionStrategy.OnPush}.
+
+\begin{lstlisting}
+@Component({
+  selector:        'app-survey',
+  standalone:      true,
+  imports:         [...],
+  template:        `...`,
+  styles:          [`...`],
+  changeDetection: ChangeDetectionStrategy.OnPush, // optimizacion
+})
+export class SurveyComponent { }
+\end{lstlisting}
+
+\begin{lstlisting}
+// Sin OnPush: Angular revisa TODOS los componentes en cada evento.
+// Con OnPush solo revisa cuando:
+//   1. Un input() cambia de referencia
+//   2. Un Signal dentro del componente cambia
+//   3. Un evento ocurre DENTRO del componente
+// Perfecto para componentes que usan Signals — como todo tu proyecto.
+\end{lstlisting}
+
+\begin{tcolorbox}[analogia, title={\emoji{racing-car} El Modo Turbo}]
+  Sin OnPush = revisar \textbf{todas} las habitaciones del hotel cada vez que alguien toca un timbre.\\
+  Con OnPush = solo revisar la habitación de \textbf{donde vino} el timbre.
+\end{tcolorbox}
+
+% ============================================================
+\section{\emoji{syringe} \texttt{@Injectable} --- ``Esto es un servicio''}
+
+Le dice a Angular que esta clase puede ser \textbf{inyectada} en otros componentes o servicios.
+
+\begin{lstlisting}
+// survey-state.service.ts linea 23
+@Injectable({ providedIn: 'root' })
+export class SurveyStateService {
+  // providedIn: 'root' = una sola instancia en toda la app (singleton)
+  // providedIn: 'any'  = una instancia por lazy-loaded module
+  // Sin providedIn     = debes registrarlo manualmente en providers: []
+}
+\end{lstlisting}
+
+\subsection{Los niveles de \texttt{providedIn}}
+
+\begin{lstlisting}
+// 1. Root — singleton global (el mas comun)
+@Injectable({ providedIn: 'root' })
+export class AuthService { }
+// Una instancia. Todos los componentes comparten el mismo objeto.
+
+// 2. A nivel de componente — instancia nueva por cada componente
+@Component({
+  providers: [FormStateService]
+  // cada <app-form> crea SU PROPIA instancia de FormStateService
+  // al destruirse el componente, el servicio se destruye tambien
+})
+export class FormComponent { }
+\end{lstlisting}
+
+\begin{tcolorbox}[analogia, title={\emoji{pizza} La Cocina del Restaurante}]
+  \texttt{providedIn: 'root'} = cocina central. Todos los meseros (componentes) van a la misma.\\
+  \texttt{providers: [Servicio]} en componente = cada mesero tiene su propia cocina.\\
+  La mayoría de casos: cocina central.
+\end{tcolorbox}
+
+% ============================================================
+\section{\emoji{magic-wand} \texttt{@Directive} --- ``Esto modifica elementos HTML''}
+
+Agrega comportamiento a elementos HTML existentes \textbf{sin crear nuevo HTML}.
+
+\begin{lstlisting}
+// shared/directives/required-mark.directive.ts
+@Directive({
+  selector: '[appRequiredMark]', // aplica a cualquier elemento con este atributo
+  standalone: true,
+})
+export class RequiredMarkDirective implements OnInit {
+  readonly appRequiredMark = input<boolean>(false);
+
+  constructor(
+    private readonly el: ElementRef<HTMLElement>, // referencia al elemento DOM
+    private readonly renderer: Renderer2,          // herramienta segura para el DOM
+  ) {}
+
+  ngOnInit(): void {
+    if (this.appRequiredMark()) {
+      const span = this.renderer.createElement('span');
+      this.renderer.setProperty(span, 'textContent', ' *');
+      this.renderer.setStyle(span, 'color', '#f44336');
+      this.renderer.appendChild(this.el.nativeElement, span);
+    }
+  }
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+<!-- Uso: el atributo activa la directiva -->
+<div [appRequiredMark]="field().validation?.required ?? false">
+  {{ field().label }}
+</div>
+<!-- Si required=true -> el div queda: "Nombre *" con el * en rojo -->
+\end{lstlisting}
+
+\subsection{\texttt{ElementRef} vs \texttt{Renderer2}}
+
+\begin{lstlisting}
+// ElementRef — acceso DIRECTO al nodo DOM nativo
+// PELIGROSO: abre la puerta a XSS si insertas contenido del usuario
+this.el.nativeElement.style.color = 'red'; // funciona pero riesgoso
+
+// Renderer2 — abstraccion SEGURA sobre el DOM
+// RECOMENDADO: funciona en SSR, Web Workers, y es XSS-safe
+this.renderer.setStyle(this.el.nativeElement, 'color', 'red');
+\end{lstlisting}
+
+\begin{tcolorbox}[regla, title={\emoji{locked} Regla de Seguridad}]
+  Siempre \texttt{Renderer2} sobre \texttt{ElementRef.nativeElement} directo.\\
+  Si Angular corre en SSR (servidor), \texttt{Renderer2} sigue funcionando.\\
+  El acceso directo explota sin DOM.
+\end{tcolorbox}
+
+% ============================================================
+\section{\emoji{ear} \texttt{@HostListener} --- Escuchar Eventos del Host}
+
+Escucha eventos del \textbf{elemento donde está aplicada} la directiva o componente.
+
+\begin{lstlisting}
+@Directive({ selector: '[appClickTracker]', standalone: true })
+export class ClickTrackerDirective {
+
+  // Escucha click del elemento host
+  @HostListener('click', ['$event'])
+  onClick(event: MouseEvent): void {
+    console.log('Click en:', event.target);
+  }
+
+  // Escucha eventos del DOCUMENTO completo
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    console.log('Usuario presiono Escape');
+  }
+
+  // Escucha eventos de la VENTANA
+  @HostListener('window:resize', ['$event'])
+  onResize(event: Event): void {
+    console.log('Ventana redimensionada');
+  }
+}
+\end{lstlisting}
+
+\begin{tcolorbox}[analogia, title={\emoji{microphone} El Micrófono Pegado al Elemento}]
+  \texttt{@HostListener} escucha todo lo que pasa en el elemento host\\
+  y ejecuta tu código cuando ocurre el evento.
+\end{tcolorbox}
+
+% ============================================================
+\section{\emoji{artist-palette} \texttt{@HostBinding} --- Bindear al Elemento Host}
+
+Conecta una propiedad de tu directiva a un \textbf{atributo o clase del elemento host}.
+
+\begin{lstlisting}
+@Directive({ selector: '[appResaltado]', standalone: true })
+export class ResaltadoDirective {
+
+  @HostBinding('class.activo')       isActivo = false;
+  @HostBinding('attr.disabled')      isDeshabilitado = false;
+  @HostBinding('style.backgroundColor') color = 'transparent';
+
+  @HostListener('mouseenter')
+  onEnter(): void {
+    this.isActivo = true;
+    this.color = '#e3f2fd'; // azul claro al hacer hover
+  }
+
+  @HostListener('mouseleave')
+  onLeave(): void {
+    this.isActivo = false;
+    this.color = 'transparent';
+  }
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+<!-- Uso: al hacer hover -> class="activo" y fondo azul automatico -->
+<div appResaltado>Pasa el mouse aqui</div>
+\end{lstlisting}
+
+% ============================================================
+\section{\emoji{abacus} \texttt{@Pipe} --- Transformadores Reutilizables}
+
+\begin{lstlisting}
+// Pipe que trunca texto largo con "..."
+@Pipe({
+  name:       'truncar',   // nombre en el template
+  standalone: true,
+  pure:       true,        // solo recalcula si el INPUT cambia (recomendado)
+})
+export class TruncarPipe implements PipeTransform {
+  transform(valor: string, limite: number = 100): string {
+    if (!valor) return '';
+    if (valor.length <= limite) return valor;
+    return valor.slice(0, limite) + '...';
+  }
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+{{ "Texto muy largo que necesita truncarse" | truncar:20 }}
+<!-- -> "Texto muy largo que " -->
+
+{{ pregunta.label | truncar }}     <!-- default 100 chars -->
+{{ pregunta.label | truncar:50 }}  <!-- limite 50 chars -->
+\end{lstlisting}
+
+\subsection{\texttt{pure} vs \texttt{impure}}
+
+\begin{lstlisting}
+// pure: true (default) — recalcula SOLO cuando el valor de entrada cambia
+// Eficiente. Angular cachea el resultado.
+@Pipe({ name: 'miPipe', pure: true })
+
+// pure: false — recalcula en CADA ciclo de deteccion de cambios
+// Costoso. Solo si el pipe depende de estado externo (fecha actual, etc.)
+@Pipe({ name: 'ahora', pure: false })
+export class AhoraPipe implements PipeTransform {
+  transform(): string {
+    return new Date().toLocaleTimeString(); // cambia cada segundo
+  }
+}
+\end{lstlisting}
+
+% ============================================================
+\section{\emoji{clipboard} Resumen --- Bloque 3}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.6}
+\begin{tabular}{>{\ttfamily\bfseries}p{3.5cm} p{9cm}}
+\toprule
+Decorador & Para qué \\
+\midrule
+@Component & Pieza de UI con template y estilos \\
+@Injectable & Servicio inyectable (\texttt{providedIn: 'root'} = singleton) \\
+@Directive & Modifica elementos HTML sin crear nuevo HTML \\
+@Pipe & Transforma valores en el template \\
+@HostListener & Escucha eventos del elemento host o globales \\
+@HostBinding & Conecta propiedades internas a atributos del host \\
+\midrule
+ElementRef & Referencia al nodo DOM nativo (usar con cuidado) \\
+Renderer2 & Forma segura de manipular el DOM (preferida siempre) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
 % ============================================================
 \vfill
 \begin{center}
