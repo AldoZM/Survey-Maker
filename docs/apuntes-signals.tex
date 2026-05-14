@@ -1,13 +1,18 @@
 % ============================================================
 %  APUNTES — Signals en Angular (Survey Maker)
-%  Compilar con: pdflatex apuntes-signals.tex
+%  Compilar con: LuaLaTeX
+%  En Overleaf: Menu -> Compiler -> LuaLaTeX
 % ============================================================
 \documentclass[12pt, a4paper]{article}
 
-% --- Codificación y fuentes (pdfLaTeX) ----------------------
-\usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
-\usepackage{lmodern}
+% --- Fuentes y codificación (LuaLaTeX) ----------------------
+\usepackage{fontspec}
+\setmainfont{Latin Modern Roman}
+\setmonofont[Scale=0.88]{Courier New}
+
+% --- Emojis -------------------------------------------------
+\usepackage{emoji}
+\setemojifont{TwemojiMozilla}
 
 % --- Idioma -------------------------------------------------
 \usepackage[spanish]{babel}
@@ -24,11 +29,12 @@
 \definecolor{grisCodigo}{RGB}{31, 41, 55}
 \definecolor{amarillo}{RGB}{251, 191, 36}
 \definecolor{morado}{RGB}{124, 58, 237}
+\definecolor{naranja}{RGB}{234, 88, 12}
 
 % --- Código fuente ------------------------------------------
 \usepackage{listings}
 \lstdefinestyle{ts}{
-  language        = [Sharp]C,           % lo más cercano a TypeScript
+  language        = [Sharp]C,
   basicstyle      = \ttfamily\small,
   keywordstyle    = \color{azulSignal}\bfseries,
   commentstyle    = \color{verdeOk}\itshape,
@@ -42,12 +48,12 @@
   numbersep       = 8pt,
   tabsize         = 2,
   breaklines      = true,
-  breakatwhitespace = true,
   showstringspaces = false,
   xleftmargin     = 1.5em,
   morekeywords    = {signal, computed, effect, inject, readonly,
                      const, let, async, of, map, return, true, false,
-                     null, undefined, string, number, boolean, void},
+                     null, undefined, string, number, boolean, void,
+                     update, untracked},
 }
 \lstset{style=ts}
 
@@ -58,31 +64,43 @@
   analogia/.style={
     colback   = blue!5,
     colframe  = azulSignal,
-    fonttitle = \bfseries,
-    title     = Analogía,
-    arc       = 4pt,
+    fonttitle = \bfseries\large,
+    title     = {~Analogía},
+    arc       = 6pt,
+    left      = 8pt,
+    right     = 8pt,
+    top       = 6pt,
+    bottom    = 6pt,
   },
   importante/.style={
     colback   = yellow!10,
-    colframe  = amarillo,
-    fonttitle = \bfseries,
-    arc       = 4pt,
+    colframe  = amarillo!80!orange,
+    fonttitle = \bfseries\large,
+    arc       = 6pt,
+    left      = 8pt,
+    right     = 8pt,
   },
   regla/.style={
     colback   = green!5,
     colframe  = verdeOk,
-    fonttitle = \bfseries,
-    arc       = 4pt,
+    fonttitle = \bfseries\large,
+    arc       = 6pt,
+    left      = 8pt,
+    right     = 8pt,
+  },
+  peligro/.style={
+    colback   = red!5,
+    colframe  = rojoError,
+    fonttitle = \bfseries\large,
+    arc       = 6pt,
+    left      = 8pt,
+    right     = 8pt,
   },
 }
 
 % --- Hiperlinks ---------------------------------------------
 \usepackage{hyperref}
-\hypersetup{
-  colorlinks = true,
-  linkcolor  = azulSignal,
-  urlcolor   = morado,
-}
+\hypersetup{colorlinks=true, linkcolor=azulSignal, urlcolor=morado}
 
 % --- Tablas -------------------------------------------------
 \usepackage{booktabs}
@@ -92,13 +110,13 @@
 \usepackage{fancyhdr}
 \pagestyle{fancy}
 \fancyhf{}
-\rhead{\textcolor{gray}{\small Signals — Angular Moderno}}
+\rhead{\textcolor{gray}{\small \emoji{zap} Signals — Angular Moderno}}
 \lhead{\textcolor{gray}{\small Survey Maker}}
 \cfoot{\textcolor{gray}{\thepage}}
 
-% --- Gráficos (diagramas ASCII con tikz) --------------------
-\usepackage{tikz}
-\usetikzlibrary{arrows.meta, shapes, positioning}
+% --- Párrafos -----------------------------------------------
+\setlength{\parskip}{6pt}
+\setlength{\parindent}{0pt}
 
 % ============================================================
 \begin{document}
@@ -106,18 +124,23 @@
 % --- Portada ------------------------------------------------
 \begin{titlepage}
   \centering
-  \vspace*{3cm}
-  {\Huge\bfseries\color{azulSignal} Apuntes de Angular}\\[0.5cm]
-  {\Large\color{grisCodigo} Signals — El Sistema Reactivo}\\[1cm]
-  \rule{10cm}{1pt}\\[1cm]
-  {\large Proyecto: \textbf{Survey Maker}}\\[0.3cm]
-  {\large\texttt{D:/Codigo Abierto/GenEncuesta/repo/survey-maker}}\\[1cm]
-  {\normalsize Aldo Zetina — UNAM Ciencias de la Computación}\\[0.3cm]
-  {\normalsize\color{gray} Mayo 2026}\\[2cm]
-  \begin{tcolorbox}[importante, title=Cómo compilar este archivo]
-    Compatible con \textbf{pdfLaTeX} y \textbf{XeLaTeX}.\\
-    Comando: \texttt{pdflatex apuntes-signals.tex}\\
-    En Overleaf: compilador por defecto funciona.
+  \vspace*{2.5cm}
+
+  {\fontsize{48}{48}\selectfont \emoji{zap}}\\[0.4cm]
+  {\Huge\bfseries\color{azulSignal} Apuntes de Angular}\\[0.4cm]
+  {\Large\color{grisCodigo} Signals — El Sistema Reactivo}\\[0.8cm]
+
+  \textcolor{gray!60}{\rule{10cm}{0.8pt}}\\[0.8cm]
+
+  {\large Proyecto: \textbf{Survey Maker}}\\[0.2cm]
+  {\normalsize\texttt{\textcolor{morado}{github.com/AldoZM/Survey-Maker}}}\\[0.8cm]
+
+  {\normalsize \emoji{student} Aldo Zetina — UNAM Ciencias de la Computación}\\[0.2cm]
+  {\normalsize \emoji{calendar} Mayo 2026}\\[2cm]
+
+  \begin{tcolorbox}[importante, title={\emoji{wrench} Cómo compilar en Overleaf}]
+    \textbf{Menu} \textrightarrow\ \textbf{Compiler} \textrightarrow\ selecciona \textbf{LuaLaTeX}\\
+    (Necesario para renderizar los emojis correctamente)
   \end{tcolorbox}
 \end{titlepage}
 
@@ -125,65 +148,69 @@
 \newpage
 
 % ============================================================
-\section{La Idea Central — Sin Código}
+\section{\emoji{brain} La Idea Central — Sin Código}
 
 Antes de ver código, entiende el concepto con una historia.
 
-\begin{tcolorbox}[analogia, title=La Pizarra Mágica]
-Imagina que tienes una \textbf{pizarra mágica} en tu cuarto. Escribes un número en ella, digamos \textit{``0 respuestas contestadas''}.
+\begin{tcolorbox}[analogia, title={\emoji{magic-wand} La Pizarra Mágica}]
+Imagina que tienes una \textbf{pizarra mágica} en tu cuarto.
+Escribes un número en ella: \textit{``0 respuestas contestadas''}.
 
 Afuera hay tres amigos mirando por la ventana:
+
 \begin{itemize}
-  \item \textbf{Barra de progreso} — actualiza su dibujo cuando cambia el número.
-  \item \textbf{Botón de Enviar} — se activa cuando el número llega al máximo.
-  \item \textbf{localStorage} — guarda una foto del número automáticamente.
+  \item \emoji{bar-chart} \textbf{Barra de progreso} — actualiza su dibujo cuando cambia el número.
+  \item \emoji{white-check-mark} \textbf{Botón de Enviar} — se activa cuando el número llega al máximo.
+  \item \emoji{floppy-disk} \textbf{localStorage} — guarda una foto del número automáticamente.
 \end{itemize}
 
-Cada vez que \textbf{borras el número y escribes uno nuevo}, los tres amigos lo ven al instante. Tú no tienes que avisarles — ellos solos reaccionan.
+Cada vez que \textbf{borras el número y escribes uno nuevo}, los tres amigos lo ven al instante.
+Tú no tienes que avisarles — ellos solos reaccionan.\\[0.3cm]
 
 \textbf{Eso es un Signal.} La pizarra mágica.
 \end{tcolorbox}
 
 % ============================================================
-\section{Tipo 1 — \texttt{signal()} — La Pizarra Mágica}
+\section{\emoji{pencil} Tipo 1 — \texttt{signal()} — La Pizarra Mágica}
 
 \subsection{Qué es}
 
-Un \texttt{signal()} crea una variable reactiva. Cuando su valor cambia,
-Angular automáticamente actualiza todo lo que depende de él.
+Un \texttt{signal()} crea una \textbf{variable reactiva}. Cuando su valor cambia,
+Angular automáticamente actualiza todo lo que depende de él — sin que tú
+tengas que avisar a nadie.
 
-\subsection{En el proyecto}
+\subsection{\emoji{file-folder} En el proyecto}
 
-Archivo: \texttt{src/app/core/services/survey-state.service.ts}, línea 28.
+Archivo: \textcolor{morado}{\texttt{core/services/survey-state.service.ts}}, línea 28.
 
 \begin{lstlisting}
-// signal() crea la "pizarra mágica".
-// Todo empieza vacío {} porque nadie ha contestado nada todavía.
-// Record<string, FieldAnswer> = un diccionario donde:
-//   - la LLAVE es el ID del campo  (ej: "nombre", "calificacion")
-//   - el VALOR es la respuesta     (ej: { value: "Juan", isValid: true })
+// signal() crea la "pizarra magica".
+// Todo empieza vacio {} — nadie ha contestado nada todavia.
+// Record<string, FieldAnswer> = diccionario donde:
+//   la LLAVE es el ID del campo  (ej: "nombre", "calificacion")
+//   el VALOR es la respuesta     (ej: { value: "Juan", isValid: true })
 readonly answers = signal<Record<string, FieldAnswer>>({});
 //                                                      ^
-//                                                      valor inicial — pizarra vacía
+//                                    {} = valor inicial, pizarra vacia
 \end{lstlisting}
 
-\subsection{Cómo leer y escribir un Signal}
+\subsection{\emoji{books} Cómo leer y escribir}
 
 \begin{lstlisting}
-// LEER — siempre con paréntesis ()
+// LEER — siempre con parentesis ()
 const todasLasRespuestas = this.answers();
 //                                      ^
-//                          los () = "dame lo que hay en la pizarra"
+//                    () = "dame lo que hay en la pizarra ahora"
 
-// ESCRIBIR — con .set() — borra todo y pone el nuevo valor
+// ESCRIBIR con .set() — reemplaza TODO el valor
 this.answers.set({ nombre: { value: "Juan", isValid: true } });
 
-// ACTUALIZAR — con .update() — modifica sin borrar el resto
+// ACTUALIZAR con .update() — modifica sin perder lo anterior
 this.answers.update(prev => ({
 //                    ^
-//                    prev = lo que había antes en la pizarra
+//             prev = lo que habia antes en la pizarra
   ...prev,           // copia todo lo anterior (no lo borres)
-  [fieldId]: {       // solo cambia ESTE campo específico
+  [fieldId]: {       // solo cambia ESTE campo especifico
     value: "nuevo valor",
     isValid: true,
     isDirty: true,
@@ -191,168 +218,169 @@ this.answers.update(prev => ({
 }));
 \end{lstlisting}
 
-\begin{tcolorbox}[regla, title=Regla de Oro — Signals]
-  Siempre leer con \texttt{signal()}, nunca sin paréntesis.\\
-  \texttt{this.answers} → objeto Signal (no el valor).\\
-  \texttt{this.answers()} → el valor real (el diccionario).
+\begin{tcolorbox}[regla, title={\emoji{pushpin} Regla de Oro}]
+  \texttt{this.answers} \textrightarrow\ objeto Signal (no el valor).\\
+  \texttt{this.answers()} \textrightarrow\ el valor real (el diccionario).\\[0.2cm]
+  \textbf{Siempre leer con \texttt{()}.}
 \end{tcolorbox}
 
 % ============================================================
-\section{Tipo 2 — \texttt{computed()} — El Amigo Matemático}
+\section{\emoji{abacus} Tipo 2 — \texttt{computed()} — El Amigo Matemático}
 
 \subsection{Qué es}
 
-Un \texttt{computed()} es una variable que se \textbf{calcula sola} a partir de
+Un \texttt{computed()} es una variable que \textbf{se calcula sola} a partir de
 otros Signals. Cuando cualquier Signal que lee cambia, el \texttt{computed}
-recalcula automáticamente.
+recalcula automáticamente. Tú nunca tienes que llamarlo.
 
-\begin{tcolorbox}[analogia, title=Celda de Excel con Fórmula]
+\begin{tcolorbox}[analogia, title={\emoji{memo} Celda de Excel con Fórmula}]
   Imagina \texttt{C1 = A1 + B1} en Excel.\\
-  Cuando cambias \texttt{A1} o \texttt{B1}, \texttt{C1} se actualiza solo.\\
+  Cuando cambias \texttt{A1} o \texttt{B1}, la celda \texttt{C1} se actualiza sola.\\
   Tú no tienes que recalcularlo a mano.\\[0.3cm]
-  \texttt{progress} es \texttt{C1}. \texttt{answers} es \texttt{A1}.
+  \emoji{zap} \texttt{progress} es \texttt{C1}. \quad \texttt{answers} es \texttt{A1}.
 \end{tcolorbox}
 
-\subsection{Progreso — en el proyecto}
+\subsection{\emoji{bar-chart} Computed de Progreso}
 
-Archivo: \texttt{src/app/core/services/survey-state.service.ts}, línea 43.
+Archivo: \textcolor{morado}{\texttt{core/services/survey-state.service.ts}}, línea 43.
 
 \begin{lstlisting}
 readonly progress = computed(() => {
 
   const s = this.schema();
-  // "schema" es otra pizarra con la definición de la encuesta.
-  // Si no hay encuesta cargada todavía → regresa 0%
+  // "schema" = otra pizarra con la definicion de la encuesta.
+  // Si no hay encuesta cargada todavia -> regresa 0%
   if (!s) return 0;
 
-  // Aplanamos todas las secciones en un solo array de campos.
-  // Imagina: [campo1, campo2, campo3, campo4, campo5]
+  // Aplanamos todas las secciones a un solo array de campos.
+  // Resultado: [campo1, campo2, campo3, campo4, campo5]
   const allFields = s.sections.flatMap(sec => sec.fields);
 
   // Solo nos importan los campos OBLIGATORIOS (los que tienen *)
   const requiredFields = allFields.filter(f => f.validation?.required);
 
-  // Si no hay campos obligatorios → ya terminaste, 100%
+  // Si no hay campos obligatorios -> ya terminaste, 100%
   if (requiredFields.length === 0) return 100;
 
-  // Contamos cuántos campos obligatorios ya contestó el usuario.
-  // Un campo cuenta como "contestado" SOLO si:
-  //   isValid = true  (el valor es correcto)
-  //   isDirty = true  (el usuario realmente lo tocó)
+  // Contamos cuantos campos obligatorios ya contesto el usuario.
+  // Un campo cuenta SOLO si:
+  //   isValid = true  (el valor que puso es correcto)
+  //   isDirty = true  (el usuario realmente lo toco)
   const answeredRequired = requiredFields.filter(f => {
     const ans = this.answers()[f.id];
     //               ^
-    //               Lee "answers" Signal — aquí crea la dependencia.
-    //               Si "answers" cambia → este computed recalcula solo.
+    //   LEE "answers" Signal aqui -> crea la dependencia magica.
+    //   Si "answers" cambia -> este computed recalcula solo.
     return ans?.isValid && ans.isDirty;
   });
 
-  // Fórmula: (contestados / total) × 100, redondeado a entero.
-  // Ejemplo: 3 de 5 campos = (3/5) × 100 = 60%
+  // Formula: (contestados / total) x 100, redondeado a entero.
+  // Ejemplo: 3 de 5 campos = (3/5) x 100 = 60%
   return Math.round((answeredRequired.length / requiredFields.length) * 100);
 });
 \end{lstlisting}
 
-\subsection{Validez — en el proyecto}
+\subsection{\emoji{white-check-mark} Computed de Validez}
 
-Archivo: \texttt{src/app/core/services/survey-state.service.ts}, línea 72.
+Archivo: \textcolor{morado}{\texttt{core/services/survey-state.service.ts}}, línea 72.
 
 \begin{lstlisting}
-// Este computed responde UNA pregunta:
-// ¿puede el usuario enviar la encuesta?
+// Responde UNA pregunta: ?puede el usuario enviar la encuesta?
 readonly isValid = computed(() =>
 
-  // .every() = "¿TODOS los campos cumplen la condición?"
-  // Si UN SOLO campo falla → regresa false → botón bloqueado
+  // .every() = "todos los campos cumplen la condicion?"
+  // Si UN SOLO campo falla -> regresa false -> boton bloqueado
   this.schema()?.sections
     .flatMap(s => s.fields)
     .every(f => {
 
-      // Si el campo NO es obligatorio → lo ignoramos, cuenta como válido
+      // Si el campo NO es obligatorio -> cuenta como valido
       if (!f.validation?.required) return true;
 
-      // Si ES obligatorio → revisamos si tiene respuesta válida
+      // Si ES obligatorio -> revisamos si tiene respuesta valida
       const ans = this.answers()[f.id];
-      //                ^
-      //                Otra lectura de "answers" → dependencia mágica
+      //               ^
+      //   Otra lectura de "answers" -> dependencia magica.
       return ans?.isValid ?? false;
       //                   ^
-      //                   ?? false = "si no existe respuesta → false"
+      //          ?? false = "si no existe respuesta -> false"
     }) ?? false
     //   ^
-    //   ?? false = "si no hay schema todavía → false"
+    //   ?? false = "si no hay schema todavia -> false"
 );
 \end{lstlisting}
 
 % ============================================================
-\section{Tipo 3 — \texttt{effect()} — El Guardián Automático}
+\section{\emoji{shield} Tipo 3 — \texttt{effect()} — El Guardián Automático}
 
 \subsection{Qué es}
 
 Un \texttt{effect()} ejecuta código cada vez que un Signal cambia.
 No retorna nada — solo realiza \textbf{efectos secundarios}: guardar datos,
-hacer log, llamar APIs externas.
+hacer log, llamar APIs.
 
-\begin{tcolorbox}[analogia, title=Alarma Automática]
+\begin{tcolorbox}[analogia, title={\emoji{alarm-clock} La Alarma Automática}]
   Es como configurar una alarma que suena \textit{cada vez} que alguien
   entra a tu cuarto.\\
-  La configuras una vez y olvidas — ella solita se activa cuando
-  ocurre el evento.
+  La configuras una vez y te olvidas — ella solita se activa cuando
+  ocurre el evento.\\[0.3cm]
+  En el proyecto: \textit{``cada vez que \texttt{answers} cambie, guárdalo en localStorage''.}
 \end{tcolorbox}
 
-\subsection{En el proyecto}
+\subsection{\emoji{floppy-disk} En el proyecto}
 
-Archivo: \texttt{src/app/core/services/survey-state.service.ts}, línea 88.
+Archivo: \textcolor{morado}{\texttt{core/services/survey-state.service.ts}}, línea 88.
 
 \begin{lstlisting}
 effect(() => {
 
   // untracked() = "lee este Signal pero NO lo vigiles"
-  // Sin untracked, el effect correría cada vez que schema cambia también.
+  // Sin untracked, el effect correria tambien cuando schema
+  // cambia (al cargar una encuesta nueva) — no queremos eso.
   // Solo queremos reaccionar cuando ANSWERS cambia.
   const s = untracked(() => this.schema());
 
-  // ESTA línea SÍ crea la dependencia.
-  // Cuando "answers" cambia → este effect corre automáticamente.
+  // ESTA linea SÍ crea la dependencia.
+  // Cuando "answers" cambia -> este effect corre automaticamente.
   const answers = this.answers();
 
-  // Si no hay encuesta cargada → no guardes nada
+  // Si no hay encuesta cargada -> no guardes nada
   if (!s) return;
 
   try {
-    // Autoguardado en localStorage — como Google Docs guardando tu documento.
-    // Clave única por encuesta para no mezclar datos.
-    // Ej: "survey-state-ejemplo-feedback" → { campo1: {...} }
+    // Autoguardado en localStorage — como Google Docs guardando.
+    // Clave unica por encuesta para no mezclar datos de distintas.
+    // Ej: "survey-state-ejemplo-feedback" -> { campo1: {...} }
     localStorage.setItem(
-      `survey-state-${s.id}`,   // llave única por encuesta
-      JSON.stringify(answers)    // convertimos objeto a texto para guardar
+      `survey-state-${s.id}`,   // llave unica por encuesta
+      JSON.stringify(answers)    // objeto -> texto para guardar
     );
   } catch {
-    // localStorage puede fallar en modo privado o si está lleno.
-    // No hacemos nada — la encuesta funciona igual, solo sin autoguardado.
+    // localStorage puede fallar en modo privado o si esta lleno.
+    // No hacemos nada — la encuesta funciona igual, sin autoguardado.
   }
 
 }, { injector: this.injector });
 \end{lstlisting}
 
 % ============================================================
-\section{Tipo 4 — \texttt{computed()} para Lógica Condicional}
+\section{\emoji{eye} Tipo 4 — \texttt{computed()} para Lógica Condicional}
 
 \subsection{Qué hace}
 
-Decide si un campo de la encuesta se muestra o no, basándose en
-la respuesta de otro campo.
+Decide si un campo de la encuesta se muestra o no,
+basándose en la respuesta de \textbf{otro campo}.
 
-Archivo: \texttt{src/app/features/survey/field-renderer.component.ts}, línea 156.
+Archivo: \textcolor{morado}{\texttt{features/survey/field-renderer.component.ts}}, línea 156.
 
 \begin{lstlisting}
 // Decide si este campo es visible en pantalla.
 // Ejemplo real: "el campo de comentarios solo aparece
-//               si elegiste 'Malo' en la calificación"
+//               si elegiste 'Malo' en la calificacion"
 readonly isVisible = computed(() => {
   const condition = this.field().condition;
 
-  // Si el campo no tiene condición → siempre visible
+  // Si el campo no tiene condicion -> siempre visible
   if (!condition) return true;
 
   // Buscamos la respuesta del campo "controlador"
@@ -360,117 +388,128 @@ readonly isVisible = computed(() => {
   const answer = this.answers()[condition.dependsOn];
   const expected = condition.equals;
 
-  // condition.equals puede ser un array para varios valores válidos.
+  // condition.equals puede ser un array para varios valores.
   // Ejemplo: equals: ["malo", "regular"]
-  // → el campo aparece si eligieron "malo" O "regular"
+  // -> el campo aparece si eligieron "malo" O "regular"
   if (Array.isArray(expected)) {
     return expected.includes(answer as string);
   }
 
-  // Comparación simple para un solo valor esperado
+  // Comparacion simple para un solo valor esperado
   return answer === expected;
 });
 \end{lstlisting}
 
-\begin{tcolorbox}[importante, title=Importante — \texttt{@if} en el Template]
-Cuando \texttt{isVisible()} regresa \texttt{false}, Angular \textbf{elimina el componente
-del DOM completamente}. No es \texttt{display: none} — el componente
-no existe en memoria y no ejecuta código.
+\begin{tcolorbox}[importante, title={\emoji{exclamation-mark} Importante — No es \texttt{display: none}}]
+  Cuando \texttt{isVisible()} regresa \texttt{false}, Angular
+  \textbf{elimina el componente del DOM completamente}.\\
+  El componente \textbf{no existe en memoria} y no ejecuta código.\\
+  No es CSS oculto — es como si nunca hubiera existido.
 \end{tcolorbox}
 
 % ============================================================
-\section{Los Tres Tipos — Resumen Visual}
+\section{\emoji{clipboard} Resumen — Los Tres Tipos}
 
 \begin{center}
-\begin{tabular}{>{\bfseries}p{3cm} p{4.5cm} p{5cm}}
+\renewcommand{\arraystretch}{1.6}
+\begin{tabular}{>{\bfseries}p{3.2cm} p{4.5cm} p{5cm}}
 \toprule
-Tipo & Para qué & Ejemplo en el proyecto \\
+\textbf{Tipo} & \textbf{Para qué} & \textbf{Ejemplo en el proyecto} \\
 \midrule
-\texttt{signal()} & Guardar estado que cambia & \texttt{answers}, \texttt{schema}, \texttt{isSubmitted} \\
-\addlinespace
-\texttt{computed()} & Calcular algo a partir de Signals & \texttt{progress}, \texttt{isValid}, \texttt{isVisible} \\
-\addlinespace
-\texttt{effect()} & Reaccionar con efectos secundarios & Guardar en \texttt{localStorage} \\
+\emoji{pencil} \texttt{signal()} &
+  Guardar estado que cambia &
+  \texttt{answers}, \texttt{schema}, \texttt{isSubmitted} \\
+\emoji{abacus} \texttt{computed()} &
+  Calcular a partir de Signals &
+  \texttt{progress}, \texttt{isValid}, \texttt{isVisible} \\
+\emoji{shield} \texttt{effect()} &
+  Efectos secundarios automáticos &
+  Guardar en \texttt{localStorage} \\
 \bottomrule
 \end{tabular}
 \end{center}
 
 % ============================================================
-\section{Flujo Completo — Lo Que Pasa Con Cada Tecla}
+\section{\emoji{world-map} Flujo Completo — Lo Que Pasa Con Cada Tecla}
 
 Cuando el usuario escribe una letra en cualquier campo:
 
 \begin{enumerate}
-  \item El browser dispara el evento \texttt{(input)}.
-  \item \texttt{TextFieldComponent} emite \texttt{valueChange("texto")}.
-  \item \texttt{SurveyComponent} llama \texttt{state.setAnswer('campo-id', 'texto')}.
-  \item \texttt{SurveyStateService} valida el valor y llama \texttt{answers.update(...)}.
-  \item \textbf{Automáticamente:}
-    \begin{itemize}
-      \item \texttt{progress} computed recalcula → la barra de progreso sube.
-      \item \texttt{isValid} computed recalcula → el botón se habilita si corresponde.
-      \item El \texttt{effect()} detecta el cambio → guarda en \texttt{localStorage}.
-      \item \texttt{isVisible} computed de cada campo reevalúa → campos condicionales aparecen/desaparecen.
-    \end{itemize}
+  \item \emoji{keyboard} El browser dispara el evento \texttt{(input)}.
+  \item \emoji{puzzle-piece} \texttt{TextFieldComponent} emite \texttt{valueChange("texto")}.
+  \item \emoji{gear} \texttt{SurveyComponent} llama \texttt{state.setAnswer('id', 'texto')}.
+  \item \emoji{pencil} \texttt{SurveyStateService} valida y llama \texttt{answers.update(...)}.
+  \item \textbf{Automáticamente y al mismo tiempo:}
+  \begin{itemize}
+    \item \emoji{bar-chart} \texttt{progress} recalcula \textrightarrow\ barra de progreso sube.
+    \item \emoji{white-check-mark} \texttt{isValid} recalcula \textrightarrow\ botón se habilita si corresponde.
+    \item \emoji{floppy-disk} El \texttt{effect()} detecta el cambio \textrightarrow\ guarda en \texttt{localStorage}.
+    \item \emoji{eye} \texttt{isVisible} de cada campo reevalúa \textrightarrow\ campos condicionales aparecen/desaparecen.
+  \end{itemize}
 \end{enumerate}
 
-\begin{tcolorbox}[regla, title=El Principio Más Importante]
-  \textbf{Tú nunca avisas manualmente.}\\
+\begin{tcolorbox}[regla, title={\emoji{star} El Principio Más Importante}]
+  \textbf{Tú nunca avisas manualmente.}\\[0.2cm]
   Solo cambias el Signal con \texttt{.set()} o \texttt{.update()}.\\
-  Todo lo demás — la UI, el progreso, el localStorage — se actualiza solo.
+  Todo lo demás — la UI, el progreso, el localStorage — se actualiza solo.\\[0.2cm]
+  Eso es programación \textbf{reactiva}.
 \end{tcolorbox}
 
 % ============================================================
-\section{Inmutabilidad — Por Qué Nunca Mutamos Directo}
+\section{\emoji{no-entry} Inmutabilidad — Por Qué Nunca Mutamos Directo}
 
-En todo el proyecto verás el patrón \texttt{...prev}. Aquí está el porqué:
+En todo el proyecto verás el patrón \texttt{\{...prev, campo: nuevo\}}. Aquí está el porqué:
 
 \begin{lstlisting}
-// INCORRECTO — misma referencia, Angular NO detecta el cambio
+// MAL — misma referencia, Angular NO detecta el cambio
 prev[fieldId] = nuevoValor;
-this.answers.set(prev);    // Angular ve el mismo objeto → no re-renderiza
+this.answers.set(prev);     // Angular ve el mismo objeto -> no re-renderiza
 
-// CORRECTO — nueva referencia, Angular SÍ detecta el cambio
+// BIEN — nueva referencia, Angular SÍ detecta el cambio
 this.answers.update(prev => ({
-  ...prev,                  // copia todos los campos anteriores
-  [fieldId]: nuevoValor     // sobreescribe solo el que cambió
+  ...prev,                   // copia todos los campos anteriores
+  [fieldId]: nuevoValor      // sobreescribe solo el que cambio
 }));
-// Resultado: objeto NUEVO en memoria → Angular detecta → UI se actualiza
+// Resultado: objeto NUEVO en memoria -> Angular actualiza la UI
 \end{lstlisting}
 
-\begin{tcolorbox}[analogia, title=Por Qué Importa la Referencia]
-  Angular compara referencias de objetos, no su contenido.\\
-  Es como comparar la \textit{dirección de una casa} en lugar del \textit{contenido}.\\
-  Si la dirección no cambia → Angular asume que nada cambió → no actualiza.\\
-  Con \texttt{\{...prev, campo: nuevo\}} → dirección nueva → Angular actualiza.
+\begin{tcolorbox}[analogia, title={\emoji{house} Por Qué Importa la Referencia}]
+  Angular compara \textbf{direcciones de objetos}, no su contenido.\\[0.2cm]
+  Es como comparar la \textit{dirección de una casa} en lugar del \textit{interior}.\\
+  Si la dirección no cambia \textrightarrow\ Angular asume que nada cambió.\\
+  Con \texttt{\{...prev\}} creas una casa \textit{nueva} en otra dirección \textrightarrow\ Angular actualiza.
 \end{tcolorbox}
 
 % ============================================================
-\section{La Analogía Final — La Pizzería}
+\section{\emoji{pizza} La Analogía Final — La Pizzería}
 
 \begin{center}
-\begin{tabular}{>{\bfseries}p{4cm} p{8cm}}
+\renewcommand{\arraystretch}{1.6}
+\begin{tabular}{>{\bfseries}p{5cm} p{7.5cm}}
 \toprule
-Concepto Angular & Analogía \\
+\textbf{Concepto Angular} & \textbf{Analogía} \\
 \midrule
 \texttt{signal(answers)} & La orden escrita en papel \\
-\texttt{computed(progress)} & La pantalla que dice ``tu pizza: 60\% lista'' \\
-\texttt{computed(isValid)} & El semáforo que dice ``listo para hornear'' \\
-\texttt{effect()} & El sistema que imprime el recibo automáticamente \\
+\texttt{computed(progress)} & Pantalla: ``tu pizza: 60\% lista'' \\
+\texttt{computed(isValid)} & Semáforo: ``listo para hornear'' \\
+\texttt{effect()} & Sistema que imprime el recibo automáticamente \\
 \texttt{.update()} & El cocinero modifica la orden \\
-Las pantallas & Los \texttt{computed()} que reaccionan solos \\
+Los \texttt{computed()} & Las pantallas que reaccionan solas \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-Cuando el cocinero modifica la orden, \textbf{todas las pantallas cambian solas}.
+Cuando el cocinero modifica la orden (\texttt{.update()}),
+\textbf{todas las pantallas cambian solas}.
 No tiene que ir pantalla por pantalla avisando.
+Eso es exactamente lo que hacen los Signals en tu proyecto.
 
 % ============================================================
-\section{Archivos Clave para Repasar}
+\section{\emoji{open-book} Archivos Clave para Repasar}
 
 \begin{center}
-\begin{tabular}{p{7cm} p{5cm}}
+\renewcommand{\arraystretch}{1.6}
+\begin{tabular}{p{7.5cm} p{5cm}}
 \toprule
 \textbf{Archivo} & \textbf{Qué estudiar} \\
 \midrule
@@ -485,8 +524,9 @@ No tiene que ir pantalla por pantalla avisando.
 % ============================================================
 \vfill
 \begin{center}
-  \textcolor{gray}{\small Apuntes generados en sesión de estudio — Mayo 2026}\\
-  \textcolor{gray}{\small Proyecto Survey Maker — Angular 19 Signal-First}
+  \textcolor{gray}{\small \emoji{zap} Apuntes de sesión de estudio — Mayo 2026}\\[0.2cm]
+  \textcolor{gray}{\small Survey Maker — Angular 19 Signal-First}\\[0.2cm]
+  \textcolor{gray}{\small \texttt{github.com/AldoZM/Survey-Maker}}
 \end{center}
 
 \end{document}
