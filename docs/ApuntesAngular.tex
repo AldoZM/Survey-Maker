@@ -165,11 +165,11 @@
 % ============================================================
 % ============================================================
 
-\section{\emoji{brain} La Idea Central — Sin Código}
+\section{\emoji{brain} \emoji{thinking-face} La Idea Central — Sin Código}
 
 Antes de ver código, entiende el concepto con una historia.
 
-\begin{tcolorbox}[analogia, title={\emoji{magic-wand} La Pizarra Mágica}]
+\begin{tcolorbox}[analogia, title={\emoji{magic-wand} \emoji{sparkles} La Pizarra Mágica}]
 Imagina que tienes una \textbf{pizarra mágica} en tu cuarto.
 Escribes un número en ella: \textit{``0 respuestas contestadas''}.
 
@@ -184,9 +184,9 @@ Tú no tienes que avisarles — ellos solos reaccionan.\\[0.3cm]
 \textbf{Eso es un Signal.} La pizarra mágica.
 \end{tcolorbox}
 
-\section{\emoji{pencil} Tipo 1 — \texttt{signal()} — La Pizarra Mágica}
+\section{\emoji{pencil} \emoji{zap} Tipo 1 — \texttt{signal()} — La Pizarra Mágica}
 
-\subsection{Qué es}
+\subsection{\emoji{question} Qué es}
 Un \texttt{signal()} crea una \textbf{variable reactiva}. Cuando su valor cambia,
 Angular actualiza todo lo que depende de él automáticamente.
 
@@ -228,20 +228,20 @@ this.answers.update(prev => ({
 }));
 \end{lstlisting}
 
-\begin{tcolorbox}[regla, title={\emoji{pushpin} Regla de Oro}]
+\begin{tcolorbox}[regla, title={\emoji{pushpin} \emoji{star} Regla de Oro}]
   \texttt{this.answers} \textrightarrow\ objeto Signal (no el valor).\\
   \texttt{this.answers()} \textrightarrow\ el valor real (el diccionario).\\[0.2cm]
   \textbf{Siempre leer con \texttt{()}.}
 \end{tcolorbox}
 
-\section{\emoji{abacus} Tipo 2 — \texttt{computed()} — El Amigo Matemático}
+\section{\emoji{abacus} \emoji{sparkles} Tipo 2 — \texttt{computed()} — El Amigo Matemático}
 
-\subsection{Qué es}
+\subsection{\emoji{question} Qué es}
 Un \texttt{computed()} es una variable que \textbf{se calcula sola} a partir de
 otros Signals. Cuando cualquier Signal que lee cambia, el \texttt{computed}
 recalcula automáticamente. Tú nunca tienes que llamarlo.
 
-\begin{tcolorbox}[analogia, title={\emoji{memo} Celda de Excel con Fórmula}]
+\begin{tcolorbox}[analogia, title={\emoji{memo} \emoji{abacus} Celda de Excel con Fórmula}]
   Imagina \texttt{C1 = A1 + B1} en Excel.\\
   Cuando cambias \texttt{A1} o \texttt{B1}, la celda \texttt{C1} se actualiza sola.\\[0.3cm]
   \emoji{zap} \texttt{progress} es \texttt{C1}. \quad \texttt{answers} es \texttt{A1}.
@@ -292,13 +292,13 @@ readonly isValid = computed(() =>
 );
 \end{lstlisting}
 
-\section{\emoji{shield} Tipo 3 — \texttt{effect()} — El Guardián Automático}
+\section{\emoji{shield} \emoji{alarm-clock} Tipo 3 — \texttt{effect()} — El Guardián Automático}
 
-\subsection{Qué es}
+\subsection{\emoji{question} Qué es}
 Un \texttt{effect()} ejecuta código cada vez que un Signal cambia.
 No retorna nada — solo realiza \textbf{efectos secundarios}: guardar datos, hacer log, llamar APIs.
 
-\begin{tcolorbox}[analogia, title={\emoji{alarm-clock} La Alarma Automática}]
+\begin{tcolorbox}[analogia, title={\emoji{alarm-clock} \emoji{zap} La Alarma Automática}]
   La configuras una vez y te olvidas.\\
   Se activa sola cada vez que el Signal cambia.\\[0.3cm]
   En el proyecto: \textit{``cada vez que \texttt{answers} cambie, guárdalo en localStorage''.}
@@ -324,7 +324,7 @@ effect(() => {
 }, { injector: this.injector });
 \end{lstlisting}
 
-\section{\emoji{eye} Tipo 4 — \texttt{computed()} para Lógica Condicional}
+\section{\emoji{eye} \emoji{scissors} Tipo 4 — \texttt{computed()} para Lógica Condicional}
 
 Decide si un campo se muestra según la respuesta de otro campo.
 Archivo: \textcolor{morado}{\texttt{features/survey/field-renderer.component.ts}}, línea 156.
@@ -344,12 +344,12 @@ readonly isVisible = computed(() => {
 });
 \end{lstlisting}
 
-\begin{tcolorbox}[importante, title={\emoji{exclamation-mark} No es \texttt{display:none}}]
+\begin{tcolorbox}[importante, title={\emoji{exclamation-mark} \emoji{warning} No es \texttt{display:none}}]
   Cuando \texttt{isVisible()} = \texttt{false}, Angular \textbf{elimina el componente del DOM}.\\
   No existe en memoria — cero costo de rendimiento.
 \end{tcolorbox}
 
-\section{\emoji{no-entry} Inmutabilidad — Por Qué Nunca Mutamos Directo}
+\section{\emoji{no-entry} \emoji{warning} Inmutabilidad — Por Qué Nunca Mutamos Directo}
 
 \begin{lstlisting}
 // MAL — misma referencia, Angular NO detecta el cambio
@@ -363,12 +363,12 @@ this.answers.update(prev => ({
 }));
 \end{lstlisting}
 
-\begin{tcolorbox}[analogia, title={\emoji{house} Por Qué Importa la Referencia}]
+\begin{tcolorbox}[analogia, title={\emoji{house} \emoji{thinking-face} Por Qué Importa la Referencia}]
   Angular compara \textbf{direcciones de objetos}, no su contenido.\\
   Con \texttt{\{...prev\}} creas un objeto \textit{nuevo} en otra dirección de memoria \textrightarrow\ Angular detecta el cambio y actualiza la UI.
 \end{tcolorbox}
 
-\section{\emoji{clipboard} Resumen — Signals}
+\section{\emoji{clipboard} \emoji{star} Resumen — Signals}
 
 \begin{center}
 \renewcommand{\arraystretch}{1.6}
@@ -390,22 +390,22 @@ Tipo & Para qué & Ejemplo en el proyecto \\
 % ============================================================
 % ============================================================
 
-\section{\emoji{building-construction} ¿Qué es un Componente?}
+\section{\emoji{building-construction} \emoji{thinking-face} ¿Qué es un Componente?}
 
 Un componente es \textbf{la unidad mínima de UI en Angular}. Todo lo que ves
 en pantalla es un componente — o varios componentes anidados.
 
-\begin{tcolorbox}[analogia, title={\emoji{remote-control} El Control Remoto}]
+\begin{tcolorbox}[analogia, title={\emoji{remote-control} \emoji{puzzle-piece} El Control Remoto}]
 Un componente tiene:
 \begin{itemize}
-  \item Una \textbf{carcasa} — el template HTML (lo que el usuario ve)
-  \item \textbf{Botones que aceptan instrucciones} — los \texttt{input()}
-  \item \textbf{Una pantalla que avisa hacia afuera} — los \texttt{output()}
-  \item \textbf{Lógica interna} — la clase TypeScript
+  \item \emoji{tv} Una \textbf{carcasa} — el template HTML (lo que el usuario ve)
+  \item \emoji{control-knobs} \textbf{Botones que aceptan instrucciones} — los \texttt{input()}
+  \item \emoji{loudspeaker} \textbf{Una pantalla que avisa hacia afuera} — los \texttt{output()}
+  \item \emoji{brain} \textbf{Lógica interna} — la clase TypeScript
 \end{itemize}
 \end{tcolorbox}
 
-\section{\emoji{microscope} Anatomía de \texttt{@Component}}
+\section{\emoji{microscope} \emoji{test-tube} Anatomía de \texttt{@Component}}
 
 \begin{lstlisting}
 @Component({
@@ -434,9 +434,9 @@ Un componente tiene:
 export class TextFieldComponent { }
 \end{lstlisting}
 
-\section{\emoji{inbox-tray} \texttt{input()} — Recibir Datos del Padre}
+\section{\emoji{inbox-tray} \emoji{package} \texttt{input()} — Recibir Datos del Padre}
 
-\subsection{Viejo vs Nuevo}
+\subsection{\emoji{old-key} \emoji{sparkles} Viejo vs Nuevo}
 \begin{lstlisting}
 // VIEJO (Angular < 17) — decorador @Input()
 @Input() value: string = '';
@@ -447,7 +447,7 @@ readonly value = input<string>('');               // con default
 readonly field = input.required<QuestionField>(); // obligatorio
 \end{lstlisting}
 
-\subsection{Por qué \texttt{readonly}}
+\subsection{\emoji{lock} Por qué \texttt{readonly}}
 \begin{lstlisting}
 // readonly = el componente NO puede cambiar su propio input.
 // Solo el PADRE puede cambiar el valor pasandole uno nuevo.
@@ -455,7 +455,7 @@ readonly field = input.required<QuestionField>(); // obligatorio
 readonly field = input.required<QuestionField>();
 \end{lstlisting}
 
-\subsection{Los tres sabores}
+\subsection{\emoji{one} \emoji{two} \emoji{three} Los tres sabores}
 \begin{lstlisting}
 // 1. Opcional con default
 readonly value = input<string>('');
@@ -469,7 +469,7 @@ readonly disabled = input<boolean, string>(false, {
 });
 \end{lstlisting}
 
-\subsection{Cómo se ve desde el padre}
+\subsection{\emoji{eyes} Cómo se ve desde el padre}
 \begin{lstlisting}
 <app-field-renderer
   [field]="field"                          <!-- [] = pasar dato al hijo -->
@@ -480,9 +480,9 @@ readonly disabled = input<boolean, string>(false, {
 />
 \end{lstlisting}
 
-\section{\emoji{outbox-tray} \texttt{output()} — Avisar al Padre}
+\section{\emoji{outbox-tray} \emoji{loudspeaker} \texttt{output()} — Avisar al Padre}
 
-\subsection{Viejo vs Nuevo}
+\subsection{\emoji{old-key} \emoji{sparkles} Viejo vs Nuevo}
 \begin{lstlisting}
 // VIEJO — @Output() con EventEmitter
 @Output() valueChange = new EventEmitter<string>();
@@ -493,7 +493,7 @@ readonly valueChange = output<string>();
 this.valueChange.emit('nuevo valor');
 \end{lstlisting}
 
-\subsection{En \texttt{text-field.component.ts}}
+\subsection{\emoji{file-folder} En \texttt{text-field.component.ts}}
 \begin{lstlisting}
 export class TextFieldComponent {
   readonly field = input.required<QuestionField>(); // recibe del padre
@@ -508,22 +508,22 @@ export class TextFieldComponent {
 }
 \end{lstlisting}
 
-\begin{tcolorbox}[regla, title={\emoji{pushpin} Regla de los Corchetes}]
+\begin{tcolorbox}[regla, title={\emoji{pushpin} \emoji{left-right-arrow} Regla de los Corchetes}]
   \textbf{Datos bajan con \texttt{[ ]}} --- del padre al hijo.\\
   \textbf{Eventos suben con \texttt{( )}} --- del hijo al padre.\\[0.3cm]
   Juntos: \texttt{[( )]} = two-way binding (los dos en uno).
 \end{tcolorbox}
 
-\section{\emoji{syringe} \texttt{inject()} — Dependency Injection Moderna}
+\section{\emoji{syringe} \emoji{electric-plug} \texttt{inject()} — Dependency Injection Moderna}
 
-\subsection{Qué es}
-\begin{tcolorbox}[analogia, title={\emoji{electric-plug} El Enchufe Central}]
+\subsection{\emoji{question} Qué es}
+\begin{tcolorbox}[analogia, title={\emoji{electric-plug} \emoji{zap} El Enchufe Central}]
   Angular tiene un ``enchufe central'' con todos los servicios disponibles.\\
   \texttt{inject()} es el cable que conecta tu componente a ese enchufe.\\
   Tú no fabricas el servicio — Angular te lo provee listo para usar.
 \end{tcolorbox}
 
-\subsection{Viejo vs Nuevo}
+\subsection{\emoji{old-key} \emoji{sparkles} Viejo vs Nuevo}
 \begin{lstlisting}
 // VIEJO — constructor injection
 export class SurveyComponent {
@@ -540,7 +540,7 @@ export class SurveyComponent {
 }
 \end{lstlisting}
 
-\subsection{\texttt{providedIn: 'root'} — El Singleton}
+\subsection{\emoji{house} \texttt{providedIn: 'root'} — El Singleton}
 \begin{lstlisting}
 // Una SOLA instancia en toda la app
 @Injectable({ providedIn: 'root' })
@@ -557,7 +557,7 @@ export class SurveyStateService { }
 // FieldRendererComponent la ve inmediatamente.
 \end{lstlisting}
 
-\section{\emoji{hourglass-done} Lifecycle Hooks — Los Momentos de Vida}
+\section{\emoji{hourglass-done} \emoji{seedling} Lifecycle Hooks — Los Momentos de Vida}
 
 \begin{lstlisting}
 // NACIMIENTO          VIDA                  MUERTE
@@ -565,7 +565,7 @@ export class SurveyStateService { }
 // ngOnInit() x1  ->   ngAfterViewInit() x1
 \end{lstlisting}
 
-\subsection{\texttt{ngOnInit()} — El más usado}
+\subsection{\emoji{seedling} \texttt{ngOnInit()} — El más usado}
 \begin{lstlisting}
 export class SurveyPageComponent implements OnInit {
   readonly loader = inject(SurveyLoaderService);
@@ -579,7 +579,7 @@ export class SurveyPageComponent implements OnInit {
 }
 \end{lstlisting}
 
-\subsection{\texttt{ngOnDestroy()} — Limpieza}
+\subsection{\emoji{broom} \texttt{ngOnDestroy()} — Limpieza}
 \begin{lstlisting}
 export class MiComponente implements OnDestroy {
   private subscription = interval(1000).subscribe(() => console.log('tick'));
@@ -592,7 +592,7 @@ export class MiComponente implements OnDestroy {
 }
 \end{lstlisting}
 
-\subsection{\texttt{effect()} como alternativa moderna a \texttt{ngOnChanges()}}
+\subsection{\emoji{sparkles} \texttt{effect()} como alternativa moderna a \texttt{ngOnChanges()}}
 \begin{lstlisting}
 // survey.component.ts — forma moderna con Signals
 export class SurveyComponent {
@@ -609,7 +609,7 @@ export class SurveyComponent {
 }
 \end{lstlisting}
 
-\section{\emoji{link} \texttt{model()} — Two-Way Binding con Signals}
+\section{\emoji{link} \emoji{left-right-arrow} \texttt{model()} — Two-Way Binding con Signals}
 
 \begin{lstlisting}
 // Sin model() — necesitas dos propiedades separadas
@@ -624,7 +624,7 @@ readonly value = model<string>('');
 // Cuando el hijo hace value.set('x') -> miVariable se actualiza sola
 \end{lstlisting}
 
-\section{\emoji{clipboard} Resumen — Bloque 1}
+\section{\emoji{clipboard} \emoji{star} Resumen — Bloque 1}
 
 \begin{center}
 \renewcommand{\arraystretch}{1.6}
@@ -653,12 +653,12 @@ effect() & Reaccionar a cambios de inputs (forma moderna) \\
 % ============================================================
 % ============================================================
 
-\section{\emoji{brain} ¿Qué es un Template?}
+\section{\emoji{brain} \emoji{thinking-face} ¿Qué es un Template?}
 
 El template es el HTML que define \textbf{lo que el usuario ve}.
 Pero no es HTML normal --- Angular lo procesa y lo hace dinámico.
 
-\begin{tcolorbox}[analogia, title={\emoji{cook} La Receta con Instrucciones}]
+\begin{tcolorbox}[analogia, title={\emoji{cook} \emoji{memo} La Receta con Instrucciones}]
 Piensa en el template como una \textbf{receta con instrucciones condicionales}:
 
 \textit{``Si hay huevos, haz omelette. Si no hay, haz cereal.
@@ -667,7 +667,7 @@ Para cada ingrediente en la lista, agrégalo al plato.''}
 Eso es exactamente lo que hacen \texttt{@if} y \texttt{@for}.
 \end{tcolorbox}
 
-\section{\emoji{speech-balloon} Interpolación \texttt{\{\{ \}\}}}
+\section{\emoji{speech-balloon} \emoji{pencil} Interpolación \texttt{\{\{ \}\}}}
 
 \begin{lstlisting}
 <mat-card-title>{{ schema().title }}</mat-card-title>
@@ -680,7 +680,7 @@ Eso es exactamente lo que hacen \texttt{@if} y \texttt{@for}.
 <!--                              ^  null/undefined -> 'Enviar' -->
 \end{lstlisting}
 
-\section{\emoji{link} Property Binding \texttt{[ ]} y Event Binding \texttt{( )}}
+\section{\emoji{link} \emoji{computer-mouse} Property Binding \texttt{[ ]} y Event Binding \texttt{( )}}
 
 \begin{lstlisting}
 <!-- SIN corchetes — pasa el TEXTO literal "value()" -->
@@ -698,12 +698,12 @@ Eso es exactamente lo que hacen \texttt{@if} y \texttt{@for}.
 <app-select-field (valueChange)="state.setAnswer(field.id, $event)" />
 \end{lstlisting}
 
-\begin{tcolorbox}[regla, title={\emoji{pushpin} Regla}]
+\begin{tcolorbox}[regla, title={\emoji{pushpin} \emoji{label} Regla}]
   \textbf{\texttt{[ ]}} → datos bajan del padre al hijo.\\
   \textbf{\texttt{( )}} → eventos suben del hijo al padre.
 \end{tcolorbox}
 
-\section{\emoji{performing-arts} \texttt{@if} / \texttt{@else} — Renderizado Condicional}
+\section{\emoji{performing-arts} \emoji{scissors} \texttt{@if} / \texttt{@else} — Renderizado Condicional}
 
 \begin{lstlisting}
 <!-- VIEJO — *ngIf, el else era confuso -->
@@ -720,7 +720,7 @@ Eso es exactamente lo que hacen \texttt{@if} y \texttt{@for}.
 }
 \end{lstlisting}
 
-\subsection{En \texttt{survey-page.component.ts}}
+\subsection{\emoji{file-folder} En \texttt{survey-page.component.ts}}
 \begin{lstlisting}
 @if (loader.survey.isLoading()) {
   <mat-progress-bar mode="indeterminate" />
@@ -748,7 +748,7 @@ Consume memoria y CPU & Cero costo cuando es \texttt{false} \\
 \end{center}
 \end{tcolorbox}
 
-\section{\emoji{repeat-button} \texttt{@for} — Iteración Reactiva}
+\section{\emoji{repeat-button} \emoji{spiral-notepad} \texttt{@for} — Iteración Reactiva}
 
 \begin{lstlisting}
 <!-- VIEJO — trackBy era opcional -->
@@ -765,13 +765,13 @@ Consume memoria y CPU & Cero costo cuando es \texttt{false} \\
 }
 \end{lstlisting}
 
-\begin{tcolorbox}[analogia, title={\emoji{id-button} Por qué \texttt{track} importa}]
+\begin{tcolorbox}[analogia, title={\emoji{id-button} \emoji{zap} Por qué \texttt{track} importa}]
   Sin \texttt{track}: Angular destruye y recrea \textbf{todos} los elementos al cambiar la lista.\\
   Con \texttt{track}: Angular solo destruye \textbf{los que desaparecieron}.\\
   Animaciones intactas, focus conservado, inputs sin limpiarse.
 \end{tcolorbox}
 
-\subsection{Variables automáticas de \texttt{@for}}
+\subsection{\emoji{abacus} Variables automáticas de \texttt{@for}}
 \begin{lstlisting}
 @for (item of lista; track item.id;
       let i = $index, first = $first, last = $last) {
@@ -782,7 +782,7 @@ Consume memoria y CPU & Cero costo cuando es \texttt{false} \\
 }
 \end{lstlisting}
 
-\subsection{\texttt{@empty}}
+\subsection{\emoji{inbox-tray} \texttt{@empty}}
 \begin{lstlisting}
 @for (encuesta of encuestas; track encuesta.id) {
   <tarjeta [data]="encuesta" />
@@ -791,7 +791,7 @@ Consume memoria y CPU & Cero costo cuando es \texttt{false} \\
 }
 \end{lstlisting}
 
-\section{\emoji{left-right-arrow} \texttt{@switch} — Despacho por Tipo}
+\section{\emoji{left-right-arrow} \emoji{light-bulb} \texttt{@switch} — Despacho por Tipo}
 
 \begin{lstlisting}
 @let f = field(); <!-- @let = variable local, evita llamar field() 7 veces -->
@@ -812,7 +812,7 @@ Consume memoria y CPU & Cero costo cuando es \texttt{false} \\
 }
 \end{lstlisting}
 
-\section{\emoji{hourglass-not-done} \texttt{@defer} — Lazy Loading en Template}
+\section{\emoji{hourglass-not-done} \emoji{sleeping-face} \texttt{@defer} — Lazy Loading en Template}
 
 \begin{lstlisting}
 @defer (on interaction) {
@@ -826,7 +826,7 @@ Consume memoria y CPU & Cero costo cuando es \texttt{false} \\
 }
 \end{lstlisting}
 
-\subsection{Triggers}
+\subsection{\emoji{zap} Triggers}
 \begin{center}
 \renewcommand{\arraystretch}{1.5}
 \begin{tabular}{>{\ttfamily}p{4.5cm} p{8cm}}
@@ -843,7 +843,7 @@ when condicion() & Cuando una expresión Signal es \texttt{true} \\
 \end{tabular}
 \end{center}
 
-\section{\emoji{abacus} Pipes — Transformadores en el Template}
+\section{\emoji{abacus} \emoji{wrench} Pipes — Transformadores en el Template}
 
 \begin{lstlisting}
 {{ fecha   | date:'dd/MM/yyyy' }}  <!-- 2026-05-13 -> "13/05/2026" -->
@@ -855,7 +855,7 @@ when condicion() & Cuando una expresión Signal es \texttt{true} \\
 {{ nombre | uppercase | slice:0:10 }}  <!-- "Aldo Zetina" -> "ALDO ZETIN" -->
 \end{lstlisting}
 
-\section{\emoji{clipboard} Resumen — Bloque 2}
+\section{\emoji{clipboard} \emoji{star} Resumen — Bloque 2}
 
 \begin{center}
 \renewcommand{\arraystretch}{1.6}
@@ -885,7 +885,7 @@ pipe | nombre & Transformar valor sin modificar el original \\
 % ============================================================
 % ============================================================
 
-\section{\emoji{brain} ¿Qué es un Decorador?}
+\section{\emoji{brain} \emoji{label} ¿Qué es un Decorador?}
 
 Un decorador es una función que \textbf{agrega comportamiento} a una clase,
 método o propiedad sin modificar su código interno. Se escribe con \texttt{@}.
@@ -899,7 +899,7 @@ class TextFieldComponent { }
 class TextFieldComponent { }
 \end{lstlisting}
 
-\begin{tcolorbox}[analogia, title={\emoji{label} La Etiqueta del Producto}]
+\begin{tcolorbox}[analogia, title={\emoji{label} \emoji{t-shirt} La Etiqueta del Producto}]
   Un decorador es como una \textbf{etiqueta en un producto}.\\
   La camiseta es la misma, pero la etiqueta le dice al sistema:\\
   ``frágil'', ``lavar a mano'', ``exportación''.\\[0.3cm]
@@ -907,7 +907,7 @@ class TextFieldComponent { }
 \end{tcolorbox}
 
 % ============================================================
-\section{\emoji{building-construction} \texttt{@Component} --- ``Esto es una pieza de UI''}
+\section{\emoji{building-construction} \emoji{puzzle-piece} \texttt{@Component} --- ``Esto es una pieza de UI''}
 
 Ya visto en Bloque 1. Adición importante: \texttt{ChangeDetectionStrategy.OnPush}.
 
@@ -932,13 +932,13 @@ export class SurveyComponent { }
 // Perfecto para componentes que usan Signals — como todo tu proyecto.
 \end{lstlisting}
 
-\begin{tcolorbox}[analogia, title={\emoji{racing-car} El Modo Turbo}]
+\begin{tcolorbox}[analogia, title={\emoji{racing-car} \emoji{zap} El Modo Turbo}]
   Sin OnPush = revisar \textbf{todas} las habitaciones del hotel cada vez que alguien toca un timbre.\\
   Con OnPush = solo revisar la habitación de \textbf{donde vino} el timbre.
 \end{tcolorbox}
 
 % ============================================================
-\section{\emoji{syringe} \texttt{@Injectable} --- ``Esto es un servicio''}
+\section{\emoji{syringe} \emoji{package} \texttt{@Injectable} --- ``Esto es un servicio''}
 
 Le dice a Angular que esta clase puede ser \textbf{inyectada} en otros componentes o servicios.
 
@@ -952,7 +952,7 @@ export class SurveyStateService {
 }
 \end{lstlisting}
 
-\subsection{Los niveles de \texttt{providedIn}}
+\subsection{\emoji{card-index-dividers} Los niveles de \texttt{providedIn}}
 
 \begin{lstlisting}
 // 1. Root — singleton global (el mas comun)
@@ -969,14 +969,14 @@ export class AuthService { }
 export class FormComponent { }
 \end{lstlisting}
 
-\begin{tcolorbox}[analogia, title={\emoji{pizza} La Cocina del Restaurante}]
+\begin{tcolorbox}[analogia, title={\emoji{pizza} \emoji{cook} La Cocina del Restaurante}]
   \texttt{providedIn: 'root'} = cocina central. Todos los meseros (componentes) van a la misma.\\
   \texttt{providers: [Servicio]} en componente = cada mesero tiene su propia cocina.\\
   La mayoría de casos: cocina central.
 \end{tcolorbox}
 
 % ============================================================
-\section{\emoji{magic-wand} \texttt{@Directive} --- ``Esto modifica elementos HTML''}
+\section{\emoji{magic-wand} \emoji{sparkles} \texttt{@Directive} --- ``Esto modifica elementos HTML''}
 
 Agrega comportamiento a elementos HTML existentes \textbf{sin crear nuevo HTML}.
 
@@ -1013,7 +1013,7 @@ export class RequiredMarkDirective implements OnInit {
 <!-- Si required=true -> el div queda: "Nombre *" con el * en rojo -->
 \end{lstlisting}
 
-\subsection{\texttt{ElementRef} vs \texttt{Renderer2}}
+\subsection{\emoji{hammer} \emoji{shield} \texttt{ElementRef} vs \texttt{Renderer2}}
 
 \begin{lstlisting}
 // ElementRef — acceso DIRECTO al nodo DOM nativo
@@ -1025,14 +1025,14 @@ this.el.nativeElement.style.color = 'red'; // funciona pero riesgoso
 this.renderer.setStyle(this.el.nativeElement, 'color', 'red');
 \end{lstlisting}
 
-\begin{tcolorbox}[regla, title={\emoji{locked} Regla de Seguridad}]
+\begin{tcolorbox}[regla, title={\emoji{locked} \emoji{shield} Regla de Seguridad}]
   Siempre \texttt{Renderer2} sobre \texttt{ElementRef.nativeElement} directo.\\
   Si Angular corre en SSR (servidor), \texttt{Renderer2} sigue funcionando.\\
   El acceso directo explota sin DOM.
 \end{tcolorbox}
 
 % ============================================================
-\section{\emoji{ear} \texttt{@HostListener} --- Escuchar Eventos del Host}
+\section{\emoji{ear} \emoji{microphone} \texttt{@HostListener} --- Escuchar Eventos del Host}
 
 Escucha eventos del \textbf{elemento donde está aplicada} la directiva o componente.
 
@@ -1060,13 +1060,13 @@ export class ClickTrackerDirective {
 }
 \end{lstlisting}
 
-\begin{tcolorbox}[analogia, title={\emoji{microphone} El Micrófono Pegado al Elemento}]
+\begin{tcolorbox}[analogia, title={\emoji{microphone} \emoji{ear} El Micrófono Pegado al Elemento}]
   \texttt{@HostListener} escucha todo lo que pasa en el elemento host\\
   y ejecuta tu código cuando ocurre el evento.
 \end{tcolorbox}
 
 % ============================================================
-\section{\emoji{artist-palette} \texttt{@HostBinding} --- Bindear al Elemento Host}
+\section{\emoji{artist-palette} \emoji{hook} \texttt{@HostBinding} --- Bindear al Elemento Host}
 
 Conecta una propiedad de tu directiva a un \textbf{atributo o clase del elemento host}.
 
@@ -1098,7 +1098,7 @@ export class ResaltadoDirective {
 \end{lstlisting}
 
 % ============================================================
-\section{\emoji{abacus} \texttt{@Pipe} --- Transformadores Reutilizables}
+\section{\emoji{abacus} \emoji{recycle} \texttt{@Pipe} --- Transformadores Reutilizables}
 
 \begin{lstlisting}
 // Pipe que trunca texto largo con "..."
@@ -1124,7 +1124,7 @@ export class TruncarPipe implements PipeTransform {
 {{ pregunta.label | truncar:50 }}  <!-- limite 50 chars -->
 \end{lstlisting}
 
-\subsection{\texttt{pure} vs \texttt{impure}}
+\subsection{\emoji{zap} vs \emoji{snail} \texttt{pure} vs \texttt{impure}}
 
 \begin{lstlisting}
 // pure: true (default) — recalcula SOLO cuando el valor de entrada cambia
@@ -1142,7 +1142,7 @@ export class AhoraPipe implements PipeTransform {
 \end{lstlisting}
 
 % ============================================================
-\section{\emoji{clipboard} Resumen --- Bloque 3}
+\section{\emoji{clipboard} \emoji{star} Resumen --- Bloque 3}
 
 \begin{center}
 \renewcommand{\arraystretch}{1.6}
