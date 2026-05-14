@@ -1,0 +1,884 @@
+% ============================================================
+%  APUNTES ANGULAR — Survey Maker
+%  Documento maestro — todos los bloques aqui
+%  Compilar con: LuaLaTeX
+%  Comando: lualatex ApuntesAngular.tex
+% ============================================================
+\documentclass[12pt, a4paper]{article}
+
+% --- Fuentes ------------------------------------------------
+\usepackage{fontspec}
+\setmainfont{Latin Modern Roman}
+\setmonofont[Scale=0.88]{Courier New}
+
+% --- Emojis -------------------------------------------------
+\usepackage{emoji}
+\setemojifont{Segoe UI Emoji}
+
+% --- Idioma -------------------------------------------------
+\usepackage[spanish]{babel}
+
+% --- Márgenes -----------------------------------------------
+\usepackage[top=2.5cm, bottom=2.5cm, left=2.8cm, right=2.8cm]{geometry}
+
+% --- Colores ------------------------------------------------
+\usepackage[dvipsnames, table]{xcolor}
+\definecolor{azulSignal}{RGB}{37, 99, 235}
+\definecolor{verdeOk}{RGB}{22, 163, 74}
+\definecolor{rojoError}{RGB}{220, 38, 38}
+\definecolor{grisClaro}{RGB}{243, 244, 246}
+\definecolor{grisCodigo}{RGB}{31, 41, 55}
+\definecolor{amarillo}{RGB}{251, 191, 36}
+\definecolor{morado}{RGB}{124, 58, 237}
+\definecolor{naranja}{RGB}{234, 88, 12}
+\definecolor{azulParte}{RGB}{15, 52, 96}
+
+% --- Código fuente ------------------------------------------
+\usepackage{listings}
+\lstdefinestyle{ts}{
+  language        = [Sharp]C,
+  basicstyle      = \ttfamily\small,
+  keywordstyle    = \color{azulSignal}\bfseries,
+  commentstyle    = \color{verdeOk}\itshape,
+  stringstyle     = \color{rojoError},
+  backgroundcolor = \color{grisClaro},
+  frame           = single,
+  framerule       = 0.5pt,
+  rulecolor       = \color{gray!40},
+  numbers         = left,
+  numberstyle     = \tiny\color{gray},
+  numbersep       = 8pt,
+  tabsize         = 2,
+  breaklines      = true,
+  showstringspaces = false,
+  xleftmargin     = 1.5em,
+  morekeywords    = {signal, computed, effect, inject, readonly,
+                     const, let, async, of, map, return, true, false,
+                     null, undefined, string, number, boolean, void,
+                     update, untracked, input, output, model,
+                     if, else, for, switch, case, default,
+                     defer, placeholder, loading, error, empty,
+                     track, on, when, ngOnInit, ngOnDestroy},
+}
+\lstset{style=ts}
+
+% --- Cajas decorativas --------------------------------------
+\usepackage[most]{tcolorbox}
+\tcbset{
+  analogia/.style={
+    colback=blue!5, colframe=azulSignal,
+    fonttitle=\bfseries\large, arc=6pt,
+    left=8pt, right=8pt, top=6pt, bottom=6pt,
+  },
+  importante/.style={
+    colback=yellow!10, colframe=amarillo!80!orange,
+    fonttitle=\bfseries\large, arc=6pt,
+    left=8pt, right=8pt,
+  },
+  regla/.style={
+    colback=green!5, colframe=verdeOk,
+    fonttitle=\bfseries\large, arc=6pt,
+    left=8pt, right=8pt,
+  },
+  peligro/.style={
+    colback=red!5, colframe=rojoError,
+    fonttitle=\bfseries\large, arc=6pt,
+    left=8pt, right=8pt,
+  },
+}
+
+% --- Links --------------------------------------------------
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=azulSignal, urlcolor=morado}
+
+% --- Tablas -------------------------------------------------
+\usepackage{booktabs}
+\usepackage{array}
+
+% --- Encabezado y pie ---------------------------------------
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\textcolor{gray}{\small \emoji{open-book} ApuntesAngular}}
+\rhead{\textcolor{gray}{\small Survey Maker}}
+\cfoot{\textcolor{gray}{\thepage}}
+
+% --- Separadores de Parte -----------------------------------
+\usepackage{titlesec}
+\titleformat{\part}[display]
+  {\centering\normalfont\Huge\bfseries\color{azulParte}}
+  {\centering\normalfont\large\color{gray} Parte \thepart}
+  {12pt}{}
+
+% --- Párrafos -----------------------------------------------
+\setlength{\parskip}{6pt}
+\setlength{\parindent}{0pt}
+
+% ============================================================
+\begin{document}
+
+% --- Portada ------------------------------------------------
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+  {\fontsize{56}{56}\selectfont \emoji{graduation-cap}}\\[0.5cm]
+  {\Huge\bfseries\color{azulParte} Apuntes de Angular}\\[0.4cm]
+  {\large\color{grisCodigo} Angular 17--19 · Signal-First · Survey Maker}\\[0.8cm]
+  \textcolor{gray!50}{\rule{12cm}{1pt}}\\[0.8cm]
+
+  \begin{minipage}{0.8\textwidth}
+    \centering
+    \begin{tcolorbox}[colback=grisClaro, colframe=gray!40, arc=6pt]
+      \centering
+      \textbf{Contenido}\\[0.4cm]
+      \begin{tabular}{cl}
+        \emoji{zap}           & Signals (\texttt{signal}, \texttt{computed}, \texttt{effect}) \\[4pt]
+        \emoji{puzzle-piece}  & Bloque 1 — Componentes (\texttt{@Component}, \texttt{input}, \texttt{output}) \\[4pt]
+        \emoji{artist-palette}& Bloque 2 — Templates (\texttt{@if}, \texttt{@for}, \texttt{@defer}) \\[4pt]
+        \emoji{wrench}        & (próximos bloques aquí) \\
+      \end{tabular}
+    \end{tcolorbox}
+  \end{minipage}
+
+  \vspace{1.2cm}
+  {\normalsize \emoji{student} \textbf{Aldo Zetina} — UNAM Ciencias de la Computación}\\[0.3cm]
+  {\normalsize \texttt{\textcolor{morado}{github.com/AldoZM/Survey-Maker}}}\\[0.3cm]
+  {\normalsize \emoji{calendar} Mayo 2026}\\[1.5cm]
+
+  \begin{tcolorbox}[importante, title={\emoji{wrench} Compilar localmente}]
+    \texttt{lualatex ApuntesAngular.tex}\\
+    (requiere MiKTeX o TeX Live con LuaLaTeX)
+  \end{tcolorbox}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ============================================================
+% ============================================================
+\part{\emoji{zap} Signals — El Sistema Reactivo}
+% ============================================================
+% ============================================================
+
+\section{\emoji{brain} La Idea Central — Sin Código}
+
+Antes de ver código, entiende el concepto con una historia.
+
+\begin{tcolorbox}[analogia, title={\emoji{magic-wand} La Pizarra Mágica}]
+Imagina que tienes una \textbf{pizarra mágica} en tu cuarto.
+Escribes un número en ella: \textit{``0 respuestas contestadas''}.
+
+Afuera hay tres amigos mirando por la ventana:
+\begin{itemize}
+  \item \emoji{bar-chart} \textbf{Barra de progreso} — actualiza su dibujo cuando cambia el número.
+  \item \emoji{white-check-mark} \textbf{Botón de Enviar} — se activa cuando el número llega al máximo.
+  \item \emoji{floppy-disk} \textbf{localStorage} — guarda una foto del número automáticamente.
+\end{itemize}
+Cada vez que \textbf{borras el número y escribes uno nuevo}, los tres amigos lo ven al instante.
+Tú no tienes que avisarles — ellos solos reaccionan.\\[0.3cm]
+\textbf{Eso es un Signal.} La pizarra mágica.
+\end{tcolorbox}
+
+\section{\emoji{pencil} Tipo 1 — \texttt{signal()} — La Pizarra Mágica}
+
+\subsection{Qué es}
+Un \texttt{signal()} crea una \textbf{variable reactiva}. Cuando su valor cambia,
+Angular actualiza todo lo que depende de él automáticamente.
+
+\subsection{\emoji{file-folder} En el proyecto}
+Archivo: \textcolor{morado}{\texttt{core/services/survey-state.service.ts}}, línea 28.
+
+\begin{lstlisting}
+// signal() crea la "pizarra magica".
+// Todo empieza vacio {} — nadie ha contestado nada todavia.
+// Record<string, FieldAnswer> = diccionario donde:
+//   la LLAVE es el ID del campo  (ej: "nombre", "calificacion")
+//   el VALOR es la respuesta     (ej: { value: "Juan", isValid: true })
+readonly answers = signal<Record<string, FieldAnswer>>({});
+//                                                      ^
+//                                    {} = valor inicial, pizarra vacia
+\end{lstlisting}
+
+\subsection{\emoji{books} Cómo leer y escribir}
+
+\begin{lstlisting}
+// LEER — siempre con parentesis ()
+const todasLasRespuestas = this.answers();
+//                                      ^
+//                    () = "dame lo que hay en la pizarra ahora"
+
+// ESCRIBIR con .set() — reemplaza TODO el valor
+this.answers.set({ nombre: { value: "Juan", isValid: true } });
+
+// ACTUALIZAR con .update() — modifica sin perder lo anterior
+this.answers.update(prev => ({
+//                    ^
+//             prev = lo que habia antes en la pizarra
+  ...prev,           // copia todo lo anterior (no lo borres)
+  [fieldId]: {       // solo cambia ESTE campo especifico
+    value: "nuevo valor",
+    isValid: true,
+    isDirty: true,
+  }
+}));
+\end{lstlisting}
+
+\begin{tcolorbox}[regla, title={\emoji{pushpin} Regla de Oro}]
+  \texttt{this.answers} \textrightarrow\ objeto Signal (no el valor).\\
+  \texttt{this.answers()} \textrightarrow\ el valor real (el diccionario).\\[0.2cm]
+  \textbf{Siempre leer con \texttt{()}.}
+\end{tcolorbox}
+
+\section{\emoji{abacus} Tipo 2 — \texttt{computed()} — El Amigo Matemático}
+
+\subsection{Qué es}
+Un \texttt{computed()} es una variable que \textbf{se calcula sola} a partir de
+otros Signals. Cuando cualquier Signal que lee cambia, el \texttt{computed}
+recalcula automáticamente. Tú nunca tienes que llamarlo.
+
+\begin{tcolorbox}[analogia, title={\emoji{memo} Celda de Excel con Fórmula}]
+  Imagina \texttt{C1 = A1 + B1} en Excel.\\
+  Cuando cambias \texttt{A1} o \texttt{B1}, la celda \texttt{C1} se actualiza sola.\\[0.3cm]
+  \emoji{zap} \texttt{progress} es \texttt{C1}. \quad \texttt{answers} es \texttt{A1}.
+\end{tcolorbox}
+
+\subsection{\emoji{bar-chart} Computed de Progreso}
+Archivo: \textcolor{morado}{\texttt{core/services/survey-state.service.ts}}, línea 43.
+
+\begin{lstlisting}
+readonly progress = computed(() => {
+  const s = this.schema();
+  if (!s) return 0;
+
+  // Aplanamos todas las secciones a un solo array de campos
+  const allFields = s.sections.flatMap(sec => sec.fields);
+  const requiredFields = allFields.filter(f => f.validation?.required);
+  if (requiredFields.length === 0) return 100;
+
+  // Un campo cuenta SOLO si: isValid=true Y isDirty=true
+  const answeredRequired = requiredFields.filter(f => {
+    const ans = this.answers()[f.id];
+    //               ^
+    //   LEE "answers" Signal -> crea la dependencia magica.
+    //   Si "answers" cambia -> este computed recalcula solo.
+    return ans?.isValid && ans.isDirty;
+  });
+
+  // (contestados / total) x 100
+  return Math.round((answeredRequired.length / requiredFields.length) * 100);
+});
+\end{lstlisting}
+
+\subsection{\emoji{white-check-mark} Computed de Validez}
+Archivo: \textcolor{morado}{\texttt{core/services/survey-state.service.ts}}, línea 72.
+
+\begin{lstlisting}
+// ?puede el usuario enviar la encuesta?
+readonly isValid = computed(() =>
+  // .every() = "todos los campos cumplen la condicion?"
+  // Si UN SOLO campo falla -> regresa false -> boton bloqueado
+  this.schema()?.sections
+    .flatMap(s => s.fields)
+    .every(f => {
+      if (!f.validation?.required) return true; // opcional -> valido
+      const ans = this.answers()[f.id]; // dependencia magica
+      return ans?.isValid ?? false;
+    }) ?? false
+);
+\end{lstlisting}
+
+\section{\emoji{shield} Tipo 3 — \texttt{effect()} — El Guardián Automático}
+
+\subsection{Qué es}
+Un \texttt{effect()} ejecuta código cada vez que un Signal cambia.
+No retorna nada — solo realiza \textbf{efectos secundarios}: guardar datos, hacer log, llamar APIs.
+
+\begin{tcolorbox}[analogia, title={\emoji{alarm-clock} La Alarma Automática}]
+  La configuras una vez y te olvidas.\\
+  Se activa sola cada vez que el Signal cambia.\\[0.3cm]
+  En el proyecto: \textit{``cada vez que \texttt{answers} cambie, guárdalo en localStorage''.}
+\end{tcolorbox}
+
+Archivo: \textcolor{morado}{\texttt{core/services/survey-state.service.ts}}, línea 88.
+
+\begin{lstlisting}
+effect(() => {
+  // untracked() = "lee este Signal pero NO lo vigiles"
+  // Solo queremos reaccionar cuando ANSWERS cambia, no cuando schema cambia
+  const s = untracked(() => this.schema());
+
+  const answers = this.answers(); // ESTA linea crea la dependencia
+
+  if (!s) return;
+  try {
+    // Autoguardado — como Google Docs guardando tu documento
+    localStorage.setItem(`survey-state-${s.id}`, JSON.stringify(answers));
+  } catch {
+    // localStorage puede fallar en modo privado o si esta lleno
+  }
+}, { injector: this.injector });
+\end{lstlisting}
+
+\section{\emoji{eye} Tipo 4 — \texttt{computed()} para Lógica Condicional}
+
+Decide si un campo se muestra según la respuesta de otro campo.
+Archivo: \textcolor{morado}{\texttt{features/survey/field-renderer.component.ts}}, línea 156.
+
+\begin{lstlisting}
+// "el campo de comentarios solo aparece si elegiste 'Malo'"
+readonly isVisible = computed(() => {
+  const condition = this.field().condition;
+  if (!condition) return true; // sin condicion -> siempre visible
+
+  const answer = this.answers()[condition.dependsOn];
+  const expected = condition.equals;
+
+  // equals puede ser array: ["malo", "regular"] -> cualquiera vale
+  if (Array.isArray(expected)) return expected.includes(answer as string);
+  return answer === expected;
+});
+\end{lstlisting}
+
+\begin{tcolorbox}[importante, title={\emoji{exclamation-mark} No es \texttt{display:none}}]
+  Cuando \texttt{isVisible()} = \texttt{false}, Angular \textbf{elimina el componente del DOM}.\\
+  No existe en memoria — cero costo de rendimiento.
+\end{tcolorbox}
+
+\section{\emoji{no-entry} Inmutabilidad — Por Qué Nunca Mutamos Directo}
+
+\begin{lstlisting}
+// MAL — misma referencia, Angular NO detecta el cambio
+prev[fieldId] = nuevoValor;
+this.answers.set(prev); // Angular ve el mismo objeto -> no re-renderiza
+
+// BIEN — nueva referencia, Angular SÍ detecta el cambio
+this.answers.update(prev => ({
+  ...prev,               // copia todos los campos anteriores
+  [fieldId]: nuevoValor  // sobreescribe solo el que cambio
+}));
+\end{lstlisting}
+
+\begin{tcolorbox}[analogia, title={\emoji{house} Por Qué Importa la Referencia}]
+  Angular compara \textbf{direcciones de objetos}, no su contenido.\\
+  Con \texttt{\{...prev\}} creas un objeto \textit{nuevo} en otra dirección de memoria \textrightarrow\ Angular detecta el cambio y actualiza la UI.
+\end{tcolorbox}
+
+\section{\emoji{clipboard} Resumen — Signals}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.6}
+\begin{tabular}{>{\bfseries}p{3cm} p{4.5cm} p{5cm}}
+\toprule
+Tipo & Para qué & Ejemplo en el proyecto \\
+\midrule
+\texttt{signal()} & Guardar estado que cambia & \texttt{answers}, \texttt{schema}, \texttt{isSubmitted} \\
+\texttt{computed()} & Calcular a partir de Signals & \texttt{progress}, \texttt{isValid}, \texttt{isVisible} \\
+\texttt{effect()} & Efectos secundarios automáticos & Guardar en \texttt{localStorage} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\newpage
+% ============================================================
+% ============================================================
+\part{\emoji{puzzle-piece} Bloque 1 — El Componente a Fondo}
+% ============================================================
+% ============================================================
+
+\section{\emoji{building-construction} ¿Qué es un Componente?}
+
+Un componente es \textbf{la unidad mínima de UI en Angular}. Todo lo que ves
+en pantalla es un componente — o varios componentes anidados.
+
+\begin{tcolorbox}[analogia, title={\emoji{remote-control} El Control Remoto}]
+Un componente tiene:
+\begin{itemize}
+  \item Una \textbf{carcasa} — el template HTML (lo que el usuario ve)
+  \item \textbf{Botones que aceptan instrucciones} — los \texttt{input()}
+  \item \textbf{Una pantalla que avisa hacia afuera} — los \texttt{output()}
+  \item \textbf{Lógica interna} — la clase TypeScript
+\end{itemize}
+\end{tcolorbox}
+
+\section{\emoji{microscope} Anatomía de \texttt{@Component}}
+
+\begin{lstlisting}
+@Component({
+  // 1. Nombre del tag HTML que usas en templates
+  //    Convencion: siempre "app-" + nombre-en-kebab-case
+  selector: 'app-text-field',
+
+  // 2. Sin NgModule (Angular moderno — el componente se autogestiona)
+  standalone: true,
+
+  // 3. Que otros componentes/directivas usa SU template
+  //    Solo lo que usa ESTE componente, nada mas
+  imports: [MatFormFieldModule, MatInputModule],
+
+  // 4. El HTML del componente (inline o en archivo separado)
+  template: `
+    <mat-form-field>
+      <input matInput [value]="value()" />
+    </mat-form-field>
+  `,
+
+  // 5. CSS encapsulado — solo aplica a ESTE componente
+  //    No choca con estilos de otros componentes
+  styles: ['.full-width { width: 100%; }'],
+})
+export class TextFieldComponent { }
+\end{lstlisting}
+
+\section{\emoji{inbox-tray} \texttt{input()} — Recibir Datos del Padre}
+
+\subsection{Viejo vs Nuevo}
+\begin{lstlisting}
+// VIEJO (Angular < 17) — decorador @Input()
+@Input() value: string = '';
+@Input({ required: true }) field!: QuestionField;
+
+// NUEVO (Angular 17+) — funcion input()
+readonly value = input<string>('');               // con default
+readonly field = input.required<QuestionField>(); // obligatorio
+\end{lstlisting}
+
+\subsection{Por qué \texttt{readonly}}
+\begin{lstlisting}
+// readonly = el componente NO puede cambiar su propio input.
+// Solo el PADRE puede cambiar el valor pasandole uno nuevo.
+// Si intentas hacer this.field.set(...) -> error de TypeScript.
+readonly field = input.required<QuestionField>();
+\end{lstlisting}
+
+\subsection{Los tres sabores}
+\begin{lstlisting}
+// 1. Opcional con default
+readonly value = input<string>('');
+
+// 2. Obligatorio — TypeScript error si el padre no lo pasa
+readonly field = input.required<QuestionField>();
+
+// 3. Con transform — transforma el valor antes de guardarlo
+readonly disabled = input<boolean, string>(false, {
+  transform: (v) => v === 'true' || v === true
+});
+\end{lstlisting}
+
+\subsection{Cómo se ve desde el padre}
+\begin{lstlisting}
+<app-field-renderer
+  [field]="field"                          <!-- [] = pasar dato al hijo -->
+  [answers]="answersAsValues()"
+  [value]="state.answers()[field.id]?.value"
+  [errorMessage]="state.getError(field.id)"
+  (valueChange)="state.setAnswer(field.id, $event)"  <!-- () = escuchar al hijo -->
+/>
+\end{lstlisting}
+
+\section{\emoji{outbox-tray} \texttt{output()} — Avisar al Padre}
+
+\subsection{Viejo vs Nuevo}
+\begin{lstlisting}
+// VIEJO — @Output() con EventEmitter
+@Output() valueChange = new EventEmitter<string>();
+this.valueChange.emit('nuevo valor');
+
+// NUEVO — output()
+readonly valueChange = output<string>();
+this.valueChange.emit('nuevo valor');
+\end{lstlisting}
+
+\subsection{En \texttt{text-field.component.ts}}
+\begin{lstlisting}
+export class TextFieldComponent {
+  readonly field = input.required<QuestionField>(); // recibe del padre
+  readonly value = input<string>('');               // recibe del padre
+  readonly valueChange = output<string>();           // avisa al padre
+
+  onInput(event: Event): void {
+    // Cada vez que el usuario escribe, avisamos al padre
+    // $event en el template = lo que emitimos aqui
+    this.valueChange.emit((event.target as HTMLInputElement).value);
+  }
+}
+\end{lstlisting}
+
+\begin{tcolorbox}[regla, title={\emoji{pushpin} Regla de los Corchetes}]
+  \textbf{Datos bajan con \texttt{[ ]}} --- del padre al hijo.\\
+  \textbf{Eventos suben con \texttt{( )}} --- del hijo al padre.\\[0.3cm]
+  Juntos: \texttt{[( )]} = two-way binding (los dos en uno).
+\end{tcolorbox}
+
+\section{\emoji{syringe} \texttt{inject()} — Dependency Injection Moderna}
+
+\subsection{Qué es}
+\begin{tcolorbox}[analogia, title={\emoji{electric-plug} El Enchufe Central}]
+  Angular tiene un ``enchufe central'' con todos los servicios disponibles.\\
+  \texttt{inject()} es el cable que conecta tu componente a ese enchufe.\\
+  Tú no fabricas el servicio — Angular te lo provee listo para usar.
+\end{tcolorbox}
+
+\subsection{Viejo vs Nuevo}
+\begin{lstlisting}
+// VIEJO — constructor injection
+export class SurveyComponent {
+  constructor(
+    private state: SurveyStateService,
+    private loader: SurveyLoaderService,
+  ) { }
+}
+
+// NUEVO — inject() funcional
+export class SurveyComponent {
+  private readonly state  = inject(SurveyStateService);
+  private readonly loader = inject(SurveyLoaderService);
+}
+\end{lstlisting}
+
+\subsection{\texttt{providedIn: 'root'} — El Singleton}
+\begin{lstlisting}
+// Una SOLA instancia en toda la app
+@Injectable({ providedIn: 'root' })
+export class SurveyStateService { }
+\end{lstlisting}
+
+\begin{lstlisting}
+// Todos obtienen EL MISMO objeto:
+// SurveyComponent       inject(SurveyStateService) -> mismo objeto
+// FieldRendererComponent inject(SurveyStateService) -> mismo objeto
+// SurveyPageComponent   inject(SurveyStateService) -> mismo objeto
+
+// Por eso cuando SurveyComponent guarda una respuesta,
+// FieldRendererComponent la ve inmediatamente.
+\end{lstlisting}
+
+\section{\emoji{hourglass-done} Lifecycle Hooks — Los Momentos de Vida}
+
+\begin{lstlisting}
+// NACIMIENTO          VIDA                  MUERTE
+// constructor()  ->   ngOnChanges() xN  ->  ngOnDestroy()
+// ngOnInit() x1  ->   ngAfterViewInit() x1
+\end{lstlisting}
+
+\subsection{\texttt{ngOnInit()} — El más usado}
+\begin{lstlisting}
+export class SurveyPageComponent implements OnInit {
+  readonly loader = inject(SurveyLoaderService);
+
+  ngOnInit(): void {
+    // Corre UNA SOLA VEZ cuando el componente aparece en el DOM.
+    // Aqui van: llamadas HTTP iniciales, inicializacion de estado.
+    // Los input() YA tienen sus valores en este punto.
+    this.loader.loadSurvey('ejemplo-feedback');
+  }
+}
+\end{lstlisting}
+
+\subsection{\texttt{ngOnDestroy()} — Limpieza}
+\begin{lstlisting}
+export class MiComponente implements OnDestroy {
+  private subscription = interval(1000).subscribe(() => console.log('tick'));
+
+  ngOnDestroy(): void {
+    // Corre cuando el componente se elimina del DOM.
+    // Sin limpieza -> memory leak (la app se come la RAM).
+    this.subscription.unsubscribe();
+  }
+}
+\end{lstlisting}
+
+\subsection{\texttt{effect()} como alternativa moderna a \texttt{ngOnChanges()}}
+\begin{lstlisting}
+// survey.component.ts — forma moderna con Signals
+export class SurveyComponent {
+  readonly schema = input.required<SurveySchema>();
+
+  constructor() {
+    // effect() detecta cuando schema() cambia — igual que ngOnChanges
+    // pero con Signals: mas preciso, mas eficiente
+    effect(() => {
+      const s = this.schema();
+      if (s) this.state.initSurvey(s);
+    });
+  }
+}
+\end{lstlisting}
+
+\section{\emoji{link} \texttt{model()} — Two-Way Binding con Signals}
+
+\begin{lstlisting}
+// Sin model() — necesitas dos propiedades separadas
+readonly value       = input<string>('');
+readonly valueChange = output<string>();
+
+// Con model() — una sola propiedad, two-way binding automatico
+readonly value = model<string>('');
+
+// En el template del padre:
+// [(value)]="miVariable"
+// Cuando el hijo hace value.set('x') -> miVariable se actualiza sola
+\end{lstlisting}
+
+\section{\emoji{clipboard} Resumen — Bloque 1}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.6}
+\begin{tabular}{>{\ttfamily\bfseries}p{4cm} p{8.5cm}}
+\toprule
+Concepto & Para qué \\
+\midrule
+@Component & Define un componente (selector, template, styles, imports) \\
+input() & Recibir datos del padre (solo lectura) \\
+input.required() & Input obligatorio — error si el padre no lo pasa \\
+output() & Avisar al padre con eventos \\
+model() & Two-way binding (input + output en uno) \\
+inject() & Obtener servicios sin constructor \\
+providedIn: 'root' & Singleton — una instancia para toda la app \\
+ngOnInit() & Código al nacer (después de que inputs están listos) \\
+ngOnDestroy() & Limpieza al morir (subscriptions, timers) \\
+effect() & Reaccionar a cambios de inputs (forma moderna) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\newpage
+% ============================================================
+% ============================================================
+\part{\emoji{artist-palette} Bloque 2 — Templates Modernos (Angular 17+)}
+% ============================================================
+% ============================================================
+
+\section{\emoji{brain} ¿Qué es un Template?}
+
+El template es el HTML que define \textbf{lo que el usuario ve}.
+Pero no es HTML normal --- Angular lo procesa y lo hace dinámico.
+
+\begin{tcolorbox}[analogia, title={\emoji{cook} La Receta con Instrucciones}]
+Piensa en el template como una \textbf{receta con instrucciones condicionales}:
+
+\textit{``Si hay huevos, haz omelette. Si no hay, haz cereal.
+Para cada ingrediente en la lista, agrégalo al plato.''}
+
+Eso es exactamente lo que hacen \texttt{@if} y \texttt{@for}.
+\end{tcolorbox}
+
+\section{\emoji{speech-balloon} Interpolación \texttt{\{\{ \}\}}}
+
+\begin{lstlisting}
+<mat-card-title>{{ schema().title }}</mat-card-title>
+<!--                ^  Signal — () obligatorios para leer -->
+
+<span>{{ state.progress() }}% completado</span>
+<!-- Si progress() = 60 renderiza: "60% completado" -->
+
+<button>{{ schema().submitLabel ?? 'Enviar' }}</button>
+<!--                              ^  null/undefined -> 'Enviar' -->
+\end{lstlisting}
+
+\section{\emoji{link} Property Binding \texttt{[ ]} y Event Binding \texttt{( )}}
+
+\begin{lstlisting}
+<!-- SIN corchetes — pasa el TEXTO literal "value()" -->
+<input value="value()">  <!-- INCORRECTO -->
+
+<!-- CON corchetes — evalua la EXPRESION -->
+<input [value]="value()">  <!-- CORRECTO -->
+
+<!-- Event binding — escucha eventos -->
+<input (input)="onInput($event)">
+<button (click)="onSubmit()">Enviar</button>
+<input (keyup.enter)="buscar()">  <!-- solo al presionar Enter -->
+
+<!-- Output de hijo -->
+<app-select-field (valueChange)="state.setAnswer(field.id, $event)" />
+\end{lstlisting}
+
+\begin{tcolorbox}[regla, title={\emoji{pushpin} Regla}]
+  \textbf{\texttt{[ ]}} → datos bajan del padre al hijo.\\
+  \textbf{\texttt{( )}} → eventos suben del hijo al padre.
+\end{tcolorbox}
+
+\section{\emoji{performing-arts} \texttt{@if} / \texttt{@else} — Renderizado Condicional}
+
+\begin{lstlisting}
+<!-- VIEJO — *ngIf, el else era confuso -->
+<div *ngIf="condicion; else miElse">Si</div>
+<ng-template #miElse><div>No</div></ng-template>
+
+<!-- NUEVO Angular 17+ -->
+@if (condicion) {
+  <div>Si</div>
+} @else if (otraCondicion) {
+  <div>Tal vez</div>
+} @else {
+  <div>No</div>
+}
+\end{lstlisting}
+
+\subsection{En \texttt{survey-page.component.ts}}
+\begin{lstlisting}
+@if (loader.survey.isLoading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+@if (loader.survey.error(); as err) {
+  <!--                      ^ "as err" captura el valor en variable local -->
+  <pre>{{ err }}</pre>
+}
+
+@if (loader.survey.value(); as schema) {
+  <app-survey [schema]="schema" />
+}
+\end{lstlisting}
+
+\begin{tcolorbox}[peligro, title={\emoji{warning} \texttt{@if} NO es \texttt{display:none}}]
+\begin{center}
+\begin{tabular}{p{5.5cm} p{6cm}}
+\textbf{\texttt{display:none}} & \textbf{\texttt{@if}} \\
+\hline
+Elemento \textbf{existe} en el DOM & Elemento \textbf{no existe} \\
+Angular ejecuta su código & Angular no ejecuta nada \\
+Consume memoria y CPU & Cero costo cuando es \texttt{false} \\
+\end{tabular}
+\end{center}
+\end{tcolorbox}
+
+\section{\emoji{repeat-button} \texttt{@for} — Iteración Reactiva}
+
+\begin{lstlisting}
+<!-- VIEJO — trackBy era opcional -->
+<div *ngFor="let s of sections; trackBy: trackByFn">{{ s.title }}</div>
+
+<!-- NUEVO — track es OBLIGATORIO -->
+@for (section of schema().sections; track section.id) {
+  <section>
+    <h3>{{ section.title }}</h3>
+    @for (field of section.fields; track field.id) {
+      <app-field-renderer [field]="field" ... />
+    }
+  </section>
+}
+\end{lstlisting}
+
+\begin{tcolorbox}[analogia, title={\emoji{id-button} Por qué \texttt{track} importa}]
+  Sin \texttt{track}: Angular destruye y recrea \textbf{todos} los elementos al cambiar la lista.\\
+  Con \texttt{track}: Angular solo destruye \textbf{los que desaparecieron}.\\
+  Animaciones intactas, focus conservado, inputs sin limpiarse.
+\end{tcolorbox}
+
+\subsection{Variables automáticas de \texttt{@for}}
+\begin{lstlisting}
+@for (item of lista; track item.id;
+      let i = $index, first = $first, last = $last) {
+  <!--      ^              ^               ^
+            0,1,2...       true si primero   true si ultimo
+            Otras: $even, $odd, $count -->
+  <div [class.ultimo]="last">{{ i + 1 }}. {{ item.nombre }}</div>
+}
+\end{lstlisting}
+
+\subsection{\texttt{@empty}}
+\begin{lstlisting}
+@for (encuesta of encuestas; track encuesta.id) {
+  <tarjeta [data]="encuesta" />
+} @empty {
+  <p>No hay encuestas disponibles.</p>
+}
+\end{lstlisting}
+
+\section{\emoji{left-right-arrow} \texttt{@switch} — Despacho por Tipo}
+
+\begin{lstlisting}
+@let f = field(); <!-- @let = variable local, evita llamar field() 7 veces -->
+
+@switch (f.type) {
+  @case ('text')     { <app-text-field     [field]="f" [value]="stringValue()"
+                         (valueChange)="valueChange.emit($event)" /> }
+  @case ('email')    { <app-text-field     [field]="f" [value]="stringValue()"
+                         (valueChange)="valueChange.emit($event)" /> }
+  @case ('number')   { <app-number-field   [field]="f" [value]="numberValue()"
+                         (valueChange)="valueChange.emit($event)" /> }
+  @case ('select')   { <app-select-field   [field]="f" [value]="stringValue()"
+                         (valueChange)="valueChange.emit($event)" /> }
+  @case ('radio')    { <app-radio-field    [field]="f" [value]="stringValue()"
+                         (valueChange)="valueChange.emit($event)" /> }
+  @case ('checkbox') { <app-checkbox-field [field]="f" [value]="arrayValue()"
+                         (valueChange)="valueChange.emit($event)" /> }
+}
+\end{lstlisting}
+
+\section{\emoji{hourglass-not-done} \texttt{@defer} — Lazy Loading en Template}
+
+\begin{lstlisting}
+@defer (on interaction) {
+  <editor-gigante [contenido]="post" />   <!-- descarga al hacer click -->
+} @placeholder {
+  <div>Haz clic para editar...</div>      <!-- antes de interactuar -->
+} @loading (minimum 300ms) {
+  <mat-spinner diameter="32" />           <!-- mientras descarga -->
+} @error {
+  <p>Error al cargar el editor.</p>       <!-- si la descarga falla -->
+}
+\end{lstlisting}
+
+\subsection{Triggers}
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{>{\ttfamily}p{4.5cm} p{8cm}}
+\toprule
+Trigger & Cuándo carga \\
+\midrule
+on idle & Cuando el browser no tiene nada que hacer \\
+on viewport & Cuando el elemento entra en la pantalla \\
+on interaction & Al hacer hover o click \\
+on hover & Solo al pasar el mouse encima \\
+on timer(3s) & Después de 3 segundos \\
+when condicion() & Cuando una expresión Signal es \texttt{true} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{\emoji{abacus} Pipes — Transformadores en el Template}
+
+\begin{lstlisting}
+{{ fecha   | date:'dd/MM/yyyy' }}  <!-- 2026-05-13 -> "13/05/2026" -->
+{{ precio  | currency:'MXN'    }}  <!-- 1500 -> "MX$1,500.00" -->
+{{ texto   | uppercase         }}  <!-- "hola" -> "HOLA" -->
+{{ objeto  | json              }}  <!-- { id:1 } -> '{"id":1}' (debug) -->
+
+<!-- Pipes encadenados izquierda a derecha -->
+{{ nombre | uppercase | slice:0:10 }}  <!-- "Aldo Zetina" -> "ALDO ZETIN" -->
+\end{lstlisting}
+
+\section{\emoji{clipboard} Resumen — Bloque 2}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.6}
+\begin{tabular}{>{\ttfamily\bfseries}p{4.5cm} p{8cm}}
+\toprule
+Sintaxis & Para qué \\
+\midrule
+\{\{ expr \}\} & Mostrar texto (interpolación) \\
+{[}prop{]} & Pasar dato a elemento o componente hijo \\
+(evento) & Escuchar evento de elemento o componente hijo \\
+{[}(modelo){]} & Two-way binding \\
+@if / @else & Renderizar si condición es \texttt{true} \\
+@for + track & Iterar lista de forma eficiente \\
+@empty & Cuando la lista está vacía \\
+@switch / @case & Seleccionar según valor \\
+@let var = expr & Variable local en template \\
+@defer (trigger) & Carga diferida de componentes pesados \\
+pipe | nombre & Transformar valor sin modificar el original \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ============================================================
+\vfill
+\begin{center}
+  \textcolor{gray}{\small \emoji{graduation-cap} ApuntesAngular --- Mayo 2026}\\[0.2cm]
+  \textcolor{gray}{\small Survey Maker --- Angular 19 Signal-First}\\[0.2cm]
+  \textcolor{gray}{\small \texttt{github.com/AldoZM/Survey-Maker}}
+\end{center}
+
+\end{document}
