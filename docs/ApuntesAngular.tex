@@ -351,7 +351,7 @@ readonly isVisible = computed(() => {
 });
 \end{lstlisting}
 
-\begin{tcolorbox}[importante, title={\emoji{exclamation-mark} \emoji{warning} No es \texttt{display:none}}]
+\begin{tcolorbox}[importante, title={\emoji{red-exclamation-mark} \emoji{warning} No es \texttt{display:none}}]
   Cuando \texttt{isVisible()} = \texttt{false}, Angular \textbf{elimina el componente del DOM}.\\
   No existe en memoria — cero costo de rendimiento.
 \end{tcolorbox}
@@ -402,7 +402,7 @@ Tipo & Para qué & Ejemplo en el proyecto \\
 Un componente es \textbf{la unidad mínima de UI en Angular}. Todo lo que ves
 en pantalla es un componente — o varios componentes anidados.
 
-\begin{tcolorbox}[analogia, title={\emoji{remote-control} \emoji{puzzle-piece} El Control Remoto}]
+\begin{tcolorbox}[analogia, title={\emoji{control-knobs} \emoji{puzzle-piece} El Control Remoto}]
 Un componente tiene:
 \begin{itemize}
   \item \emoji{tv} Una \textbf{carcasa} — el template HTML (lo que el usuario ve)
@@ -547,22 +547,7 @@ export class SurveyComponent {
 }
 \end{lstlisting}
 
-\subsection{\emoji{house} \texttt{providedIn: 'root'} — El Singleton}
-\begin{lstlisting}
-// Una SOLA instancia en toda la app
-@Injectable({ providedIn: 'root' })
-export class SurveyStateService { }
-\end{lstlisting}
-
-\begin{lstlisting}
-// Todos obtienen EL MISMO objeto:
-// SurveyComponent       inject(SurveyStateService) -> mismo objeto
-// FieldRendererComponent inject(SurveyStateService) -> mismo objeto
-// SurveyPageComponent   inject(SurveyStateService) -> mismo objeto
-
-// Por eso cuando SurveyComponent guarda una respuesta,
-// FieldRendererComponent la ve inmediatamente.
-\end{lstlisting}
+Los niveles de \texttt{providedIn}, el singleton global y la DI jerárquica se cubren en \textbf{Bloque 8}.
 
 \section{\emoji{hourglass-done} \emoji{seedling} Lifecycle Hooks — Los Momentos de Vida}
 
@@ -959,150 +944,23 @@ export class SurveyStateService {
 }
 \end{lstlisting}
 
-\subsection{\emoji{card-index-dividers} Los niveles de \texttt{providedIn}}
-
-\begin{lstlisting}
-// 1. Root — singleton global (el mas comun)
-@Injectable({ providedIn: 'root' })
-export class AuthService { }
-// Una instancia. Todos los componentes comparten el mismo objeto.
-
-// 2. A nivel de componente — instancia nueva por cada componente
-@Component({
-  providers: [FormStateService]
-  // cada <app-form> crea SU PROPIA instancia de FormStateService
-  // al destruirse el componente, el servicio se destruye tambien
-})
-export class FormComponent { }
-\end{lstlisting}
-
-\begin{tcolorbox}[analogia, title={\emoji{pizza} \emoji{cook} La Cocina del Restaurante}]
-  \texttt{providedIn: 'root'} = cocina central. Todos los meseros (componentes) van a la misma.\\
-  \texttt{providers: [Servicio]} en componente = cada mesero tiene su propia cocina.\\
-  La mayoría de casos: cocina central.
-\end{tcolorbox}
+Los niveles de \texttt{providedIn} (\texttt{root}, \texttt{platform}, local por componente) se cubren a fondo en \textbf{Bloque 8}.
 
 % ============================================================
 \section{\emoji{magic-wand} \emoji{sparkles} \texttt{@Directive} --- ``Esto modifica elementos HTML''}
 
 Agrega comportamiento a elementos HTML existentes \textbf{sin crear nuevo HTML}.
+Ejemplo real del proyecto: \texttt{RequiredMarkDirective} --- disección completa, patrones de selector,
+\texttt{ElementRef}, \texttt{Renderer2}, \texttt{@HostListener} y \texttt{@HostBinding} en \textbf{Bloque 4}.
 
 \begin{lstlisting}
-// shared/directives/required-mark.directive.ts
-@Directive({
-  selector: '[appRequiredMark]', // aplica a cualquier elemento con este atributo
-  standalone: true,
-})
+@Directive({ selector: '[appRequiredMark]', standalone: true })
 export class RequiredMarkDirective implements OnInit {
   readonly appRequiredMark = input<boolean>(false);
-
-  constructor(
-    private readonly el: ElementRef<HTMLElement>, // referencia al elemento DOM
-    private readonly renderer: Renderer2,          // herramienta segura para el DOM
-  ) {}
-
-  ngOnInit(): void {
-    if (this.appRequiredMark()) {
-      const span = this.renderer.createElement('span');
-      this.renderer.setProperty(span, 'textContent', ' *');
-      this.renderer.setStyle(span, 'color', '#f44336');
-      this.renderer.appendChild(this.el.nativeElement, span);
-    }
-  }
+  // Ver Bloque 4 para implementacion completa
 }
 \end{lstlisting}
 
-\begin{lstlisting}
-<!-- Uso: el atributo activa la directiva -->
-<div [appRequiredMark]="field().validation?.required ?? false">
-  {{ field().label }}
-</div>
-<!-- Si required=true -> el div queda: "Nombre *" con el * en rojo -->
-\end{lstlisting}
-
-\subsection{\emoji{hammer} \emoji{shield} \texttt{ElementRef} vs \texttt{Renderer2}}
-
-\begin{lstlisting}
-// ElementRef — acceso DIRECTO al nodo DOM nativo
-// PELIGROSO: abre la puerta a XSS si insertas contenido del usuario
-this.el.nativeElement.style.color = 'red'; // funciona pero riesgoso
-
-// Renderer2 — abstraccion SEGURA sobre el DOM
-// RECOMENDADO: funciona en SSR, Web Workers, y es XSS-safe
-this.renderer.setStyle(this.el.nativeElement, 'color', 'red');
-\end{lstlisting}
-
-\begin{tcolorbox}[regla, title={\emoji{locked} \emoji{shield} Regla de Seguridad}]
-  Siempre \texttt{Renderer2} sobre \texttt{ElementRef.nativeElement} directo.\\
-  Si Angular corre en SSR (servidor), \texttt{Renderer2} sigue funcionando.\\
-  El acceso directo explota sin DOM.
-\end{tcolorbox}
-
-% ============================================================
-\section{\emoji{ear} \emoji{microphone} \texttt{@HostListener} --- Escuchar Eventos del Host}
-
-Escucha eventos del \textbf{elemento donde está aplicada} la directiva o componente.
-
-\begin{lstlisting}
-@Directive({ selector: '[appClickTracker]', standalone: true })
-export class ClickTrackerDirective {
-
-  // Escucha click del elemento host
-  @HostListener('click', ['$event'])
-  onClick(event: MouseEvent): void {
-    console.log('Click en:', event.target);
-  }
-
-  // Escucha eventos del DOCUMENTO completo
-  @HostListener('document:keydown.escape')
-  onEscape(): void {
-    console.log('Usuario presiono Escape');
-  }
-
-  // Escucha eventos de la VENTANA
-  @HostListener('window:resize', ['$event'])
-  onResize(event: Event): void {
-    console.log('Ventana redimensionada');
-  }
-}
-\end{lstlisting}
-
-\begin{tcolorbox}[analogia, title={\emoji{microphone} \emoji{ear} El Micrófono Pegado al Elemento}]
-  \texttt{@HostListener} escucha todo lo que pasa en el elemento host\\
-  y ejecuta tu código cuando ocurre el evento.
-\end{tcolorbox}
-
-% ============================================================
-\section{\emoji{artist-palette} \emoji{hook} \texttt{@HostBinding} --- Bindear al Elemento Host}
-
-Conecta una propiedad de tu directiva a un \textbf{atributo o clase del elemento host}.
-
-\begin{lstlisting}
-@Directive({ selector: '[appResaltado]', standalone: true })
-export class ResaltadoDirective {
-
-  @HostBinding('class.activo')       isActivo = false;
-  @HostBinding('attr.disabled')      isDeshabilitado = false;
-  @HostBinding('style.backgroundColor') color = 'transparent';
-
-  @HostListener('mouseenter')
-  onEnter(): void {
-    this.isActivo = true;
-    this.color = '#e3f2fd'; // azul claro al hacer hover
-  }
-
-  @HostListener('mouseleave')
-  onLeave(): void {
-    this.isActivo = false;
-    this.color = 'transparent';
-  }
-}
-\end{lstlisting}
-
-\begin{lstlisting}
-<!-- Uso: al hacer hover -> class="activo" y fondo azul automatico -->
-<div appResaltado>Pasa el mouse aqui</div>
-\end{lstlisting}
 
 % ============================================================
 \section{\emoji{abacus} \emoji{recycle} \texttt{@Pipe} --- Transformadores Reutilizables}
@@ -1158,14 +1016,12 @@ export class AhoraPipe implements PipeTransform {
 Decorador & Para qué \\
 \midrule
 @Component & Pieza de UI con template y estilos \\
-@Injectable & Servicio inyectable (\texttt{providedIn: 'root'} = singleton) \\
-@Directive & Modifica elementos HTML sin crear nuevo HTML \\
+@Injectable & Servicio inyectable (\texttt{providedIn: 'root'} = singleton; niveles en Bloque 8) \\
+@Directive & Modifica elementos HTML sin crear nuevo HTML (impl.\ completa en Bloque 4) \\
 @Pipe & Transforma valores en el template \\
-@HostListener & Escucha eventos del elemento host o globales \\
-@HostBinding & Conecta propiedades internas a atributos del host \\
-\midrule
-ElementRef & Referencia al nodo DOM nativo (usar con cuidado) \\
-Renderer2 & Forma segura de manipular el DOM (preferida siempre) \\
+@HostListener & Escucha eventos del host o globales --- \textbf{ver Bloque 4} \\
+@HostBinding & Conecta propiedades a atributos del host --- \textbf{ver Bloque 4} \\
+ElementRef / Renderer2 & Manipulación DOM segura --- \textbf{ver Bloque 4} \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -1202,7 +1058,7 @@ No crea su propio HTML --- modifica o controla \textbf{elementos que ya existen}
 \renewcommand{\arraystretch}{1.8}
 \begin{tabular}{>{\bfseries}p{3.5cm} p{4cm} p{5cm}}
 \toprule
-\emoji{label} Tipo & \emoji{question} Para qué & \emoji{magnifying-glass-right} Ejemplo \\
+\emoji{label} Tipo & \emoji{question} Para qué & \emoji{magnifying-glass-tilted-right} Ejemplo \\
 \midrule
 \emoji{building-construction} Componente & Crea UI nueva & \texttt{<app-survey />} \\
 \emoji{artist-palette} Atributo & Modifica un elemento & \texttt{[appRequiredMark]} \\
@@ -1570,7 +1426,7 @@ export class TooltipDirective {
 \end{tcolorbox}
 
 % ============================================================
-\section{\emoji{children-crossing} \emoji{magnifying-glass-right} \texttt{@ContentChild} --- Ver lo que Proyecta el Padre}
+\section{\emoji{children-crossing} \emoji{magnifying-glass-tilted-right} \texttt{@ContentChild} --- Ver lo que Proyecta el Padre}
 
 \texttt{@ContentChild} permite que un componente acceda a \textbf{elementos que el padre insertó}
 dentro de él mediante \texttt{<ng-content>}.
@@ -2179,6 +2035,9 @@ setAnswer(fieldId: string, value: FieldValue): void {
 % ============================================================
 \section{\emoji{eye} \emoji{scissors} Lógica Condicional --- Campos que Aparecen y Desaparecen}
 
+El \texttt{computed()} \texttt{isVisible} fue introducido en \textbf{Parte 1, Sección 4} como ejemplo de Signal condicional.
+Aquí el contexto completo dentro del sistema de formularios JSON.
+
 Archivo: \textcolor{morado}{\texttt{features/survey/field-renderer.component.ts}}
 
 \begin{lstlisting}
@@ -2247,7 +2106,7 @@ readonly isVisible = computed(() => {
 \end{tabular}
 \end{center}
 
-\begin{tcolorbox}[analogia, title={\emoji{factory} \emoji{conveyor-belt} La Línea de Producción}]
+\begin{tcolorbox}[analogia, title={\emoji{factory} \emoji{factory} La Línea de Producción}]
   El JSON es la \textbf{materia prima}.\\
   \texttt{parseSchema()} es el \textbf{control de calidad} en la entrada.\\
   \texttt{SurveyStateService} es el \textbf{cerebro} que lleva el conteo.\\
@@ -2257,6 +2116,9 @@ readonly isVisible = computed(() => {
 
 % ============================================================
 \section{\emoji{broom} \emoji{floppy-disk} Persistencia Automática con \texttt{localStorage}}
+
+El \texttt{effect()} de autoguardado fue introducido en \textbf{Parte 1, Sección 3} como ejemplo de Signal tipo \texttt{effect()}.
+Aquí el contexto completo incluyendo \texttt{initSurvey()} que restaura respuestas previas.
 
 \begin{lstlisting}
 // En SurveyStateService — dentro del constructor
@@ -2391,7 +2253,7 @@ export const appConfig: ApplicationConfig = {
 };
 \end{lstlisting}
 
-\begin{tcolorbox}[importante, title={\emoji{warning} \emoji{exclamation-mark} Requisito para Zoneless}]
+\begin{tcolorbox}[importante, title={\emoji{warning} \emoji{red-exclamation-mark} Requisito para Zoneless}]
   Para usar \texttt{provideZonelessChangeDetection()}, \textbf{todos} tus componentes
   deben usar \texttt{ChangeDetectionStrategy.OnPush} y Signals para el estado.\\[0.3cm]
   Si tienes código que modifica variables normales fuera de Signals, la UI \textbf{no se actualizará}.
@@ -2474,7 +2336,7 @@ Cancelación & Manual & Automática (unsubscribe) \\
 \texttt{linkedSignal()} es como \texttt{computed()} pero \textbf{escribible}: puedes cambiar su valor
 manualmente y también se recalcula cuando su fuente cambia.
 
-\begin{tcolorbox}[analogia, title={\emoji{slider-button} El Volumen con Reset Automático}]
+\begin{tcolorbox}[analogia, title={\emoji{level-slider} El Volumen con Reset Automático}]
   Imagina el volumen de una canción:\\[0.3cm]
   \emoji{musical-note} Cuando cambias de canción → el volumen vuelve al default (se recalcula solo)\\
   \emoji{speaker-high-volume} Pero también puedes subir/bajar el volumen manualmente\\[0.3cm]
@@ -2514,7 +2376,7 @@ export class FormComponent {
 \end{lstlisting}
 
 % ============================================================
-\section{\emoji{frame-with-picture} \emoji{hourglass-done} \texttt{afterRender()} y \texttt{afterNextRender()}}
+\section{\emoji{framed-picture} \emoji{hourglass-done} \texttt{afterRender()} y \texttt{afterNextRender()}}
 
 Hooks para código que necesita ejecutarse \textbf{después de que Angular termina de renderizar}.
 Útil para librerías que manipulan el DOM directamente (charts, mapas, animaciones).
@@ -2678,13 +2540,13 @@ export class App { }
 Sin lazy loading, \textbf{todo} el código se descarga cuando el usuario abre la app.
 Con lazy loading, cada ruta descarga su código \textbf{cuando se visita}.
 
-\begin{tcolorbox}[analogia, title={\emoji{restaurant} \emoji{fork-and-knife} El Restaurante con Menú Modular}]
+\begin{tcolorbox}[analogia, title={\emoji{fork-and-knife-with-plate} \emoji{fork-and-knife} El Restaurante con Menú Modular}]
   Sin lazy loading: al entrar al restaurante te traen \textbf{todo el menú cocinado}.\\
   Con lazy loading: solo cocinas el platillo \textbf{cuando el cliente lo pide}.\\[0.3cm]
   Resultado: la app carga más rápido la primera vez \emoji{rocket}.
 \end{tcolorbox}
 
-\subsection{\emoji{magnifying-glass-right} Cómo ve Angular el Bundle}
+\subsection{\emoji{magnifying-glass-tilted-right} Cómo ve Angular el Bundle}
 
 \begin{lstlisting}
 // Sin lazy loading:
@@ -2866,7 +2728,7 @@ los objetos (servicios) que tu componente necesita. Tú no los instancias manual
   Imagina una fábrica con un \textbf{almacén central}:
   \begin{itemize}
     \item \emoji{package} Cada herramienta (servicio) está guardada en el almacén
-    \item \emoji{worker} Cuando un obrero (componente) necesita una herramienta, la \textbf{pide}
+    \item \emoji{construction-worker} Cuando un obrero (componente) necesita una herramienta, la \textbf{pide}
     \item \emoji{handshake} El almacén se la entrega --- no necesita fabricarla él mismo
     \item \emoji{recycle} Si dos obreros piden la misma herramienta: reciben el \textbf{mismo objeto} (singleton)
   \end{itemize}
@@ -3178,7 +3040,7 @@ DI jerárquica & Componentes hijos heredan el injector del padre \\
 
 % ============================================================
 \newpage
-\begin{tcolorbox}[importante, title={\emoji{pushpin} \emoji{magnifying-glass-right} Dónde están los temas que queríamos dominar}]
+\begin{tcolorbox}[importante, title={\emoji{pushpin} \emoji{magnifying-glass-tilted-right} Dónde están los temas que queríamos dominar}]
 \begin{center}
 \renewcommand{\arraystretch}{1.6}
 \begin{tabular}{>{\bfseries}p{4.5cm} p{8cm}}
